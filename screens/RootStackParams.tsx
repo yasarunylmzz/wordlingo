@@ -1,0 +1,22 @@
+export type RootStackParamList = {
+  Home: undefined;
+  Settings: undefined;
+  Login: undefined;
+  SignIn: undefined;
+  FirstScreen: undefined;
+  StatisticsScreen: undefined;
+  BottomScreen: undefined;
+  ProfileScreen: undefined;
+  SearchScreen: undefined;
+  SelectionScreen1: undefined;
+  SelectionScreen2: undefined;
+  CreateDeck: undefined;
+  CreateCard: undefined;
+  CardDecks: undefined;
+  MyAccount: undefined;
+  SavedBeneficary: undefined;
+  FaceId: undefined;
+  TwoFactorAuth: undefined;
+  HelpAndSupport: undefined;
+  AboutApp: undefined;
+};
