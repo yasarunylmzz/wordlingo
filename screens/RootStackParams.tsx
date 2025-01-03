@@ -19,4 +19,5 @@ export type RootStackParamList = {
   TwoFactorAuth: undefined;
   HelpAndSupport: undefined;
   AboutApp: undefined;
+  NotificationScreen: undefined;
 };

@@ -22,7 +22,7 @@ const SVGComponent = (props: any) => (
       <G
         id="Hide"
         transform="translate(2.000000, 3.500000)"
-        stroke="#A4A4A6"
+        stroke="#4f24d8"
         strokeWidth={1.5}
       >
         <Path

@@ -4,48 +4,81 @@ import {
   Text,
   ActivityIndicator,
   FlatList,
+  TouchableOpacity,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput } from "react-native-paper";
 import { fetchWordDefinition } from "../api/dictionaryAPI";
 import { DictionaryResponse } from "../types/dictionary";
+import { Audio } from "expo-av";
+import { MaterialIcons } from "@expo/vector-icons";
 
-const SearchScreen = () => {
+type SearchScreenProps = {};
+type SoundType = Audio.Sound | null;
+
+const SearchScreen: React.FC<SearchScreenProps> = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [wordData, setWordData] = useState<DictionaryResponse[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [sound, setSound] = useState<SoundType>(null);
 
   const capitalizeFirstLetter = (word: string): string => {
-    if (!word) return ""; // Boş string kontrolü
+    if (!word) return "";
     return word.charAt(0).toUpperCase() + word.slice(1);
   };
 
-  // Search query değiştikçe API isteği at
+  const playSound = async (audioUrl: string) => {
+    console.log("Audio URL:", audioUrl);
+    if (sound) {
+      await sound.unloadAsync();
+      console.log("Previous sound unloaded");
+    }
+    const { sound: newSound } = await Audio.Sound.createAsync({
+      uri: audioUrl,
+    });
+    setSound(newSound);
+    await newSound.playAsync();
+    console.log("Playing sound");
+  };
+
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+          console.log("Sound unloaded on component unmount");
+        }
+      : undefined;
+  }, [sound]);
+
   useEffect(() => {
     const handleSearch = async () => {
+      console.log("Search query:", searchQuery);
       if (searchQuery.trim() === "") {
-        setWordData(null); // Boş arama sorgusunda sonuçları sıfırla
+        setWordData(null);
+        console.log("Search query is empty, word data reset");
         return;
       }
       setLoading(true);
-      setError(null); // Hata durumunu sıfırla
+      setError(null);
       try {
-        const result = await fetchWordDefinition(searchQuery.trim()); // Arama sorgusu
-        setWordData(result.slice(0, 10)); // Sadece 5 sonuç göster
+        console.log("Fetching word definition...");
+        const result = await fetchWordDefinition(searchQuery.trim());
+        console.log("Fetch result:", result);
+        setWordData(result.slice(0, 10));
       } catch (err) {
-        setError("Error fetching word details.");
+        console.error("Error fetching word details:", err);
+        setError("check word and try again");
         setWordData(null);
       } finally {
         setLoading(false);
       }
     };
 
-    // Kullanıcının yazmayı durdurmasından sonra kısa bir bekleme süresi ekleyelim
     const delayDebounceFn = setTimeout(() => {
       handleSearch();
-    }, 500); // 500ms bekleyerek gereksiz API isteklerini önle
+    }, 1000);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
@@ -59,7 +92,10 @@ const SearchScreen = () => {
           mode="outlined"
           style={styles.searchInput}
           value={searchQuery}
-          onChangeText={setSearchQuery}
+          onChangeText={(text) => {
+            console.log("Search query updated:", text);
+            setSearchQuery(text);
+          }}
           theme={{
             colors: {
               primary: "#133266",
@@ -72,10 +108,7 @@ const SearchScreen = () => {
       </View>
 
       {loading && <ActivityIndicator size="large" color="#133266" />}
-      {/* Yüklenme spinnerı */}
-
       {error && <Text style={styles.errorText}>{error}</Text>}
-      {/* Hata mesajı */}
 
       {wordData && (
         <FlatList
@@ -83,28 +116,64 @@ const SearchScreen = () => {
           showsVerticalScrollIndicator={false}
           data={wordData}
           keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.wordContainer}>
-              <View style={styles.wordContainerText}>
-                <View style={styles.bigText}>
-                  <Text style={styles.text1}>
-                    {capitalizeFirstLetter(item.word)}
-                  </Text>
-                  <Text style={styles.type}>
-                    {item.meanings[0]?.partOfSpeech || "N/A"}
-                  </Text>
-                </View>
-                <Text style={styles.text2}>
-                  {item.meanings[0]?.definitions[0]?.definition ||
-                    "No definition available"}
+          renderItem={({ item }) => {
+            const validPhonetics = item.phonetics.filter(
+              (phonetic) => phonetic.text || phonetic.audio
+            );
+
+            return (
+              <View style={styles.wordContainer}>
+                <Text style={styles.wordTitle}>
+                  {capitalizeFirstLetter(item.word)}
                 </Text>
-                <Text style={styles.paragraph}>
-                  {item.meanings[0]?.definitions[0]?.example ||
-                    "No example available"}
-                </Text>
+
+                {/* Sadece dolu phonetics öğelerini gösterin */}
+                {validPhonetics.length > 0 &&
+                  validPhonetics.map((phonetic, phoneticIndex) => (
+                    <View key={phoneticIndex} style={styles.phoneticContainer}>
+                      <Text style={styles.phoneticText}>
+                        {phonetic.text || ""}
+                      </Text>
+                      {phonetic.audio && (
+                        <TouchableOpacity
+                          style={styles.playButton}
+                          onPress={() =>
+                            phonetic.audio && playSound(phonetic.audio)
+                          }
+                        >
+                          <MaterialIcons
+                            name="play-arrow"
+                            size={24}
+                            color="#133266"
+                          />
+                          <Text style={styles.playButtonText}>Play</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+
+                {item.meanings.map((meaning, meaningIndex) => (
+                  <View key={meaningIndex} style={styles.meaningContainer}>
+                    <Text style={styles.partOfSpeech}>
+                      {capitalizeFirstLetter(meaning.partOfSpeech)}
+                    </Text>
+                    {meaning.definitions.map((definition, defIndex) => (
+                      <View key={defIndex} style={styles.definitionContainer}>
+                        <Text style={styles.text2}>
+                          {definition.definition}
+                        </Text>
+                        {definition.example && (
+                          <Text style={styles.exampleText}>
+                            Example: {definition.example}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                ))}
               </View>
-            </View>
-          )}
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -115,13 +184,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "#f9f9fb",
   },
   topText: {
     width: "90%",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "bold",
-    color: "#133266",
+    color: "#4f24d8",
     marginTop: 20,
     marginBottom: 20,
   },
@@ -132,12 +201,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 30,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.22,
-    shadowRadius: 2.22,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
     elevation: 3,
   },
   searchInput: {
@@ -150,58 +216,71 @@ const styles = StyleSheet.create({
   },
   wordContainer: {
     backgroundColor: "#fff",
-    borderColor: "#133266",
-    borderWidth: 4,
-    borderRadius: 10,
-    width: "100%",
-    marginTop: 20,
-    justifyContent: "center",
-    shadowColor: "#133266",
-    padding: 10,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.9,
+    borderColor: "black",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 10,
+    shadowColor: "#4f24d8",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
     shadowRadius: 5,
-    elevation: 5,
+    elevation: 3,
   },
-  wordContainerText: {
-    gap: 4,
-  },
-  text1: {
-    fontSize: 22,
+  wordTitle: {
+    fontSize: 26,
     fontWeight: "bold",
+    color: "black",
+    marginBottom: 8,
+  },
+  phoneticContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 4,
+  },
+  phoneticText: {
+    fontSize: 18,
+    color: "#575757",
+    fontStyle: "italic",
+  },
+  playButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  playButtonText: {
+    marginLeft: 4,
+    fontSize: 16,
+    color: "black",
+  },
+  meaningContainer: {
+    marginTop: 10,
+  },
+  partOfSpeech: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "black",
+    textTransform: "capitalize",
+    marginBottom: 4,
+  },
+  definitionContainer: {
+    marginVertical: 6,
   },
   text2: {
     fontSize: 16,
-    color: "#575757",
+    color: "#333",
   },
-  bigText: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  type: {
-    fontSize: 12,
-    color: "#000",
-    borderWidth: 2,
-    borderColor: "#133266",
-    borderRadius: 12,
-    letterSpacing: 1.5,
-    textAlign: "center",
-    fontWeight: "bold",
-    padding: 2,
-  },
-  paragraph: {
-    width: "85%",
-    fontSize: 14,
-    color: "#133266",
+  exampleText: {
+    fontSize: 15,
+    color: "#4f24d8",
+    fontStyle: "italic",
+    marginTop: 2,
   },
   errorText: {
     color: "red",
-    fontSize: 16,
-    marginTop: 10,
+    fontSize: 24,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

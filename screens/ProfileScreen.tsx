@@ -8,6 +8,7 @@ import TwoFactorIcon from "../svg/TwoFactorIcon";
 import LogoutIcon from "../svg/LogoutIcon";
 import NotificationIcon from "../svg/NotificationIcon";
 import HeartIcon from "../svg/HeartIcon";
+import SelectButton from "../Components/ProfileScreenComponents/SelectButton";
 
 const ProfileScreen = () => {
   return (
@@ -47,13 +48,11 @@ const ProfileScreen = () => {
               icon={<ProfileIcon />}
             />
 
-            <ButtonComponents
-              targetScreen="FaceId"
-              title="Face ID / Touch ID"
+            <SelectButton
+              title="Face Id"
               description="Manage your saved account"
               icon={<LockIcon />}
             />
-
             {/* <ButtonComponents
               title="Log out"
               description="Further secure your account for safety"
@@ -109,7 +108,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 20,
     paddingVertical: 25,
-    backgroundColor: "#0601B4",
+    backgroundColor: "#4f24d8",
     alignItems: "center",
     borderRadius: 10,
   },
@@ -121,7 +120,7 @@ const styles = StyleSheet.create({
   profileText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#133266",
+    color: "#4f24d8",
     padding: 20,
   },
   username: {
@@ -136,7 +135,6 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 50,
-    backgroundColor: "#f64561",
     borderColor: "#fff",
     borderWidth: 2,
   },
@@ -144,13 +142,14 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     width: "95%",
-    height: 325,
+    height: 255,
     paddingHorizontal: 20,
     paddingVertical: 25,
     backgroundColor: "#fff",
     marginTop: 10,
     borderRadius: 10,
     gap: 40,
+    marginBottom: 10,
   },
   settings1Top: {
     width: "100%",
@@ -182,11 +181,10 @@ const styles = StyleSheet.create({
   },
   more: {
     width: "100%",
-    marginLeft: 20,
+    marginLeft: 40,
     fontSize: 20,
     fontWeight: "bold",
-    color: "#12175E",
-    marginVertical: 10,
+    color: "black",
   },
   scrollView2: {
     width: "100%",

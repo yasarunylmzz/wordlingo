@@ -4,19 +4,34 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
 } from "react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import Avatar from "../svg/Avatar";
-import CardComponents from "../Components/HomePageComponents/CardComponents";
-import EditIcon from "../svg/EditIcon";
 import { RootStackParamList } from "./RootStackParams";
+import { Dimensions } from "react-native";
+import ProfileIcon from "../svg/ProfileIcon";
+import NotificationIcon from "../svg/NotificationIcon";
+import ChartComponent from "../Components/HomePageComponents/ChartComponent";
+import OverviewComponent from "../Components/HomePageComponents/OverviewComponent";
+import TodoComponents from "../Components/HomePageComponents/TodoComponents";
 
 const HomePage = () => {
   type NavigationType = NavigationProp<RootStackParamList>;
   const navigation = useNavigation<NavigationType>();
+  const screenWidth = Dimensions.get("window").width;
+  const screenHeight = Dimensions.get("window").height;
+
+  const data = [
+    { value: 50 },
+    { value: 40 },
+    { value: 70 },
+    { value: 80 },
+    { value: 30 },
+    { value: 20 },
+    { value: 40 },
+  ];
+  const dates = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
     <SafeAreaView>
@@ -27,12 +42,11 @@ const HomePage = () => {
         </View>
         <View style={styles.rightSection}>
           <TouchableOpacity
-            onPress={() => {
-              navigation.navigate("CreateCard");
-            }}
+            onPress={() => navigation.navigate("NotificationScreen")}
           >
             <View style={styles.iconStyles}>
-              <EditIcon />
+              <View style={styles.dotIcon}></View>
+              <NotificationIcon />
             </View>
           </TouchableOpacity>
 
@@ -40,17 +54,26 @@ const HomePage = () => {
             onPress={() => navigation.navigate("ProfileScreen")}
           >
             <View style={styles.users}>
-              <Avatar />
+              <ProfileIcon color={"#4f42d8"} />
             </View>
           </TouchableOpacity>
         </View>
       </View>
       <ScrollView style={{ height: "100%" }}>
         <View style={styles.wordContainers}>
-          <Text style={styles.hiText3}>Words Container</Text>
-          <View style={styles.upperSection}>
-            <CardComponents />
+          <View
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Text style={styles.hiText3}>Overview</Text>
           </View>
+          <OverviewComponent />
+          <ChartComponent data={data} dates={dates} />
+          <TodoComponents />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -58,22 +81,6 @@ const HomePage = () => {
 };
 
 const styles = StyleSheet.create({
-  upperSection: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-    justifyContent: "space-between",
-  },
-  container1: {
-    width: 275,
-    height: 175,
-    backgroundColor: "#19998b",
-    borderRadius: 10,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    padding: 15,
-  },
   userContainer: {
     display: "flex",
     flexDirection: "row",
@@ -88,19 +95,21 @@ const styles = StyleSheet.create({
   hiText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#12175E",
+    color: "#4f24d8",
   },
   hiText2: {
     fontSize: 14,
     color: "#575757",
   },
   wordContainers: {
+    display: "flex",
+    flexDirection: "column",
     padding: 15,
   },
   hiText3: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#12175E",
+    color: "#000",
     marginBottom: 10,
   },
   users: {
@@ -109,10 +118,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 14,
     backgroundColor: "#fff",
-    borderColor: "#133266",
-    borderWidth: 2,
   },
   rightSection: {
     display: "flex",
@@ -126,10 +133,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 14,
     backgroundColor: "#fff",
-    borderColor: "#133266",
-    borderWidth: 2,
+  },
+
+  dotIcon: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#ff763f",
+    position: "absolute",
+    top: 0,
+    right: 0,
   },
 });
 

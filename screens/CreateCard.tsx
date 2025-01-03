@@ -1,397 +1,139 @@
-import { Picker } from "@react-native-picker/picker";
 import React, { useState } from "react";
 import {
   View,
   Text,
-  SafeAreaView,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
-  ActionSheetIOS,
-  Platform,
-  Modal,
-  ScrollView,
+  SafeAreaView,
+  Alert, // Alert ekledik
 } from "react-native";
-import { TextInput } from "react-native-paper";
+import { useNavigation } from "@react-navigation/native"; // Navigation hook
+import LeftArrow from "../svg/LeftArrow"; // Geri ok simgesi
 
 const CreateCard = () => {
-  const [selectedValue, setSelectedValue] = useState("noun");
-  const [selectedLanguage, setSelectedLanguage] = useState("Select Language");
-  const [selectedDesk, setSelectedDesk] = useState("Select Desk");
-  const [isPickerVisible, setIsPickerVisible] = useState(false);
-  const [isWordTypePickerVisible, setIsWordTypePickerVisible] = useState(false);
-  const [isDeskPickerVisible, setIsDeskPickerVisible] = useState(false);
+  const [deckName, setDeckName] = useState("");
+  const navigation = useNavigation(); // Navigation hook'u
 
-  const PickerList = [
-    { id: 1, name: "noun" },
-    { id: 2, name: "verb" },
-    { id: 3, name: "adjective" },
-    { id: 4, name: "adverb" },
-  ];
-
-  const LanguageList = [
-    { id: 1, name: "Spanish" },
-    { id: 2, name: "English" },
-    { id: 3, name: "French" },
-    { id: 4, name: "German" },
-  ];
-
-  const DeskList = [
-    { id: 1, name: "Desk 1" },
-    { id: 2, name: "Desk 2" },
-    { id: 3, name: "Desk 3" },
-  ];
-
-  const showLanguagePicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: LanguageList.map((item) => item.name).concat(["Cancel"]),
-          cancelButtonIndex: LanguageList.length,
-        },
-        (buttonIndex) => {
-          if (buttonIndex < LanguageList.length) {
-            setSelectedLanguage(LanguageList[buttonIndex].name);
-          }
-        }
-      );
-    } else {
-      setIsPickerVisible(true);
-    }
+  const handleGoBack = () => {
+    navigation.goBack(); // Geri gitme işlevi
   };
 
-  const showWordTypePicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: PickerList.map((item) => item.name).concat(["Cancel"]),
-          cancelButtonIndex: PickerList.length,
-        },
-        (buttonIndex) => {
-          if (buttonIndex < PickerList.length) {
-            setSelectedValue(PickerList[buttonIndex].name);
-          }
-        }
-      );
+  const handleSave = () => {
+    if (deckName.trim() === "") {
+      Alert.alert("Error", "Deck name cannot be empty");
     } else {
-      setIsWordTypePickerVisible(true);
+      // Burada save işlemi yapabilirsin, örneğin deck adıyla bir şeyler yap
+      Alert.alert("Success", `Deck "${deckName}" has been saved`);
     }
-  };
-
-  const showDeskPicker = () => {
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: DeskList.map((item) => item.name).concat(["Cancel"]),
-          cancelButtonIndex: DeskList.length,
-        },
-        (buttonIndex) => {
-          if (buttonIndex < DeskList.length) {
-            setSelectedDesk(DeskList[buttonIndex].name);
-          }
-        }
-      );
-    } else {
-      setIsDeskPickerVisible(true);
-    }
-  };
-
-  const handleDone = () => {
-    setIsPickerVisible(false);
-    setIsWordTypePickerVisible(false);
-    setIsDeskPickerVisible(false);
   };
 
   return (
-    <SafeAreaView style={styles.safeAreaView}>
-      <View style={styles.container}>
-        <Text style={styles.title}>Create Container</Text>
-
-        <TouchableOpacity
-          style={styles.languageButton}
-          onPress={showLanguagePicker}
-        >
-          <Text style={styles.languageButtonText}>{selectedLanguage}</Text>
+    <SafeAreaView style={styles.container}>
+      {/* AppBar */}
+      <View style={styles.appBar}>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <LeftArrow />
         </TouchableOpacity>
-
-        <TextInput
-          mode="outlined"
-          placeholder={`Enter a word in ${selectedLanguage}`}
-          theme={{
-            colors: {
-              primary: "#133266",
-              background: "#fff",
-            },
-          }}
-        />
-        <TextInput
-          mode="outlined"
-          style={{ marginTop: 10 }}
-          placeholder="Enter the English translation"
-          theme={{
-            colors: {
-              primary: "#133266",
-              background: "#fff",
-            },
-          }}
-        />
-
-        <Text style={styles.wordTypeTitle}>Word Type</Text>
-        <TouchableOpacity
-          style={styles.pickerContainer}
-          onPress={showWordTypePicker}
-        >
-          <Text style={styles.languageButtonText}>{selectedValue}</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.deskTitle}>Select Desk</Text>
-        <TouchableOpacity
-          style={styles.pickerContainer}
-          onPress={showDeskPicker}
-        >
-          <Text style={styles.languageButtonText}>{selectedDesk}</Text>
-        </TouchableOpacity>
+        <Text style={styles.appBarTitle}>Create Deck</Text>
       </View>
 
-      <View style={styles.saveButtonContainer}>
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={() => {
-            /* Save işlemi */
-          }}
-        >
-          <Text style={styles.saveButtonText}>Save</Text>
-        </TouchableOpacity>
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Create Deck</Text>
+
+          {/* Input kısmını tam ortalayalım */}
+          <TextInput
+            style={styles.input}
+            placeholder="Enter Deck Name"
+            value={deckName}
+            onChangeText={setDeckName}
+          />
+
+          {/* Eğer deckName varsa, bir Save butonu göster */}
+          {deckName ? (
+            <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
+              <Text style={styles.saveButtonText}>Save Deck</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
-
-      {Platform.OS !== "ios" && (
-        <>
-          <Modal
-            transparent={true}
-            animationType="slide"
-            visible={isPickerVisible}
-            onRequestClose={() => setIsPickerVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <ScrollView>
-                  {LanguageList.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.pickerItem}
-                      onPress={() => {
-                        setSelectedLanguage(item.name);
-                        setIsPickerVisible(false);
-                      }}
-                    >
-                      <Text style={styles.pickerItemText}>{item.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-                <TouchableOpacity
-                  style={styles.doneButton}
-                  onPress={handleDone}
-                >
-                  <Text style={styles.doneButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
-          <Modal
-            transparent={true}
-            animationType="slide"
-            visible={isWordTypePickerVisible}
-            onRequestClose={() => setIsWordTypePickerVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <ScrollView>
-                  {PickerList.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.pickerItem}
-                      onPress={() => {
-                        setSelectedValue(item.name);
-                        setIsWordTypePickerVisible(false);
-                      }}
-                    >
-                      <Text style={styles.pickerItemText}>{item.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-                <TouchableOpacity
-                  style={styles.doneButton}
-                  onPress={handleDone}
-                >
-                  <Text style={styles.doneButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-
-          <Modal
-            transparent={true}
-            animationType="slide"
-            visible={isDeskPickerVisible}
-            onRequestClose={() => setIsDeskPickerVisible(false)}
-          >
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <ScrollView>
-                  {DeskList.map((item) => (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={styles.pickerItem}
-                      onPress={() => {
-                        setSelectedDesk(item.name);
-                        setIsDeskPickerVisible(false);
-                      }}
-                    >
-                      <Text style={styles.pickerItemText}>{item.name}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-                <TouchableOpacity
-                  style={styles.doneButton}
-                  onPress={handleDone}
-                >
-                  <Text style={styles.doneButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Modal>
-        </>
-      )}
     </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
-  safeAreaView: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "#f0f4f7",
-  },
   container: {
-    width: "90%",
-    height: "100%",
+    flex: 1,
+    backgroundColor: "#f0f0f0",
+  },
+  appBar: {
+    width: "100%",
+    height: 60,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 15,
+    justifyContent: "space-between",
+    elevation: 3, // Hafif gölgeleme
+  },
+  backButton: {
+    padding: 10,
+  },
+  appBarTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  cardContainer: {
+    flex: 1,
+    justifyContent: "center", // Kartı dikeyde ortalar
+    alignItems: "center", // Kartı yatayda ortalar
+    paddingHorizontal: 20, // Ekran kenarlarında boşluk bırakır
+  },
+  card: {
+    width: "100%",
+    backgroundColor: "#fff",
     padding: 20,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
+    color: "#333",
     marginBottom: 20,
-    top: 0,
-    left: 0,
+    textAlign: "center",
   },
-  languageButton: {
-    backgroundColor: "#fff",
-    padding: 15,
+  input: {
+    height: 40,
+    borderColor: "#ccc",
+    borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 20,
-    alignItems: "center",
-    borderColor: "#133266",
-    borderWidth: 3,
-    shadowColor: "#133266",
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
-    elevation: 5,
+    marginBottom: 15,
+    paddingLeft: 10,
+    fontSize: 16,
   },
-  languageButtonText: {
+  deckName: {
     fontSize: 18,
-    color: "#133266",
-  },
-  wordTypeTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
+    color: "#333",
     marginTop: 20,
-    marginBottom: 10,
-  },
-  deskTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  pickerContainer: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: 5,
-    marginBottom: 20,
-    padding: 15,
-    alignItems: "center",
-    borderColor: "#133266",
-    borderWidth: 2,
-    shadowColor: "#133266",
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  saveButtonContainer: {
-    bottom: 100,
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
+    textAlign: "center",
   },
   saveButton: {
-    width: "80%",
-    height: 55,
-    backgroundColor: "#f0f0f0",
-    paddingVertical: 10,
-    paddingHorizontal: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    borderColor: "#133266",
-    borderWidth: 3,
+    backgroundColor: "#6200EE", // Buton rengi
+    paddingVertical: 12,
+    paddingHorizontal: 30,
     borderRadius: 5,
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
-    elevation: 5,
+    alignItems: "center",
   },
   saveButtonText: {
-    color: "#133266",
+    color: "#fff",
     fontSize: 18,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    padding: 20,
-    maxHeight: "50%",
-  },
-  pickerItem: {
-    padding: 15,
-    borderBottomColor: "#ccc",
-    borderBottomWidth: 1,
-  },
-  pickerItemText: {
-    fontSize: 18,
-  },
-  doneButton: {
-    marginTop: 10,
-    backgroundColor: "#2196F3",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  doneButtonText: {
-    color: "white",
-    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

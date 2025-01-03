@@ -16,10 +16,11 @@ import Facebook from "../svg/Facebook";
 import Google from "../svg/Google";
 import Apple from "../svg/Apple";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { RootStackParamList } from "./RootStackParams";
 
 const LoginScreen = () => {
   type NavigationType = NavigationProp<RootStackParamList, "Login">;
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationType>();
   const [hidePassword, setHidePassword] = React.useState(true);
 
   return (

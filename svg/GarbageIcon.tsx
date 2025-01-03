@@ -9,6 +9,7 @@ const SVGComponent = ({ width = 30, height = 30, ...props }) => (
     viewBox="0 0 489.7 489.7"
     width={width}
     height={height}
+    fill={"white"}
     style={{
       enableBackground: "new 0 0 489.7 489.7",
     }}

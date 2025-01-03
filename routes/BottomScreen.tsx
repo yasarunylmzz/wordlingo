@@ -12,7 +12,7 @@ import AllDecks from "../screens/AllDecks";
 const height = Dimensions.get("window").height;
 const Tab = createBottomTabNavigator();
 
-const TabBarIcon = ({ focused, IconComponent }) => (
+const TabBarIcon = ({ focused, IconComponent }: any) => (
   <View
     style={[
       styles.iconContainer,
@@ -24,7 +24,7 @@ const TabBarIcon = ({ focused, IconComponent }) => (
       },
     ]}
   >
-    <IconComponent color={focused ? "#4A90E2" : "#6E6E6E"} />
+    <IconComponent color={focused ? "#4f42d8" : "#6E6E6E"} />
   </View>
 );
 
@@ -34,17 +34,6 @@ function MyTabs() {
       initialRouteName="BottomBar"
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          height: 50,
-          position: "absolute",
-          paddingBottom: 0,
-          bottom: height * 0.03,
-          left: 25,
-          right: 25,
-          borderRadius: 15,
-          alignItems: "center",
-          justifyContent: "center",
-        },
       }}
     >
       <Tab.Screen
