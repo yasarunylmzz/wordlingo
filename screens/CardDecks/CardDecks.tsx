@@ -20,6 +20,10 @@ import LeftArrow from "../../svg/LeftArrow";
 import PlayIcon from "../../svg/PlayIcon";
 import EditIcon from "../../svg/EditIcon";
 import GarbageIcon from "../../svg/GarbageIcon";
+import Header from "./Components/Header";
+import BottomButton from "./Components/BottomButton";
+import CardList from "./Components/CardList";
+import CustomButton from "./Components/CustomButton";
 
 const { width } = Dimensions.get("window");
 
@@ -31,13 +35,28 @@ interface Card {
 }
 
 const CardDecks: React.FC = () => {
-  const navigation = useNavigation();
-
-  const [isDropDownVisible, setIsDropDownVisible] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [language1, setLanguage1] = useState("");
-  const [language2, setLanguage2] = useState("");
-  console.log(isDropDownVisible);
+  const [newCardWord1, setNewCardWord1] = useState("");
+  const [newCardWord2, setNewCardWord2] = useState("");
+  const [importanceLevel, setImportanceLevel] =
+    useState<Card["importanceLevel"]>("low");
+
+  const handleAddCard = () => {
+    if (newCardWord1 && newCardWord2) {
+      const newCard: Card = {
+        id: Date.now().toString(),
+        word1: newCardWord1,
+        word2: newCardWord2,
+        importanceLevel: importanceLevel,
+      };
+
+      setCards((prevCards) => [...prevCards, newCard]);
+      setNewCardWord1("");
+      setNewCardWord2("");
+      setImportanceLevel("low");
+      setIsModalVisible(false);
+    }
+  };
 
   const handleEditCard = (id: string) => {
     // Open edit modal or perform other editing actions
@@ -51,243 +70,120 @@ const CardDecks: React.FC = () => {
       word2: "Koşmak",
       importanceLevel: "low",
     },
-    {
-      id: "2",
-      word1: "Eat",
-      word2: "Yemek",
-      importanceLevel: "medium",
-    },
-    {
-      id: "3",
-      word1: "Sleep",
-      word2: "Uyumak",
-      importanceLevel: "high",
-    },
-    {
-      id: "4",
-      word1: "Sleep",
-      word2: "Uyumak",
-      importanceLevel: "high",
-    },
-    {
-      id: "5",
-      word1: "Sleep",
-      word2: "Uyumak",
-      importanceLevel: "high",
-    },
-    {
-      id: "6",
-      word1: "Sleep",
-      word2: "Uyumak",
-      importanceLevel: "high",
-    },
-    {
-      id: "7",
-      word1: "Sleep",
-      word2: "Uyumak",
-      importanceLevel: "high",
-    },
   ]);
 
   const handleDeleteCard = (id: string) => {
     setCards((prevCards) => prevCards.filter((card) => card.id !== id));
   };
 
-  const renderRightActions = (id: string) => (
-    <TouchableOpacity onPress={() => handleDeleteCard(id)}>
-      <View style={styles.deleteButton}>
-        <Text style={styles.deleteButtonText}>
-          <GarbageIcon />
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-  const renderLeftActions = (id: string) => (
-    <TouchableOpacity onPress={() => handleEditCard(id)}>
-      <View style={styles.editButton}>
-        <Text style={styles.editButtonText}>
-          <EditIcon color="white" />
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-
-  const renderStars = (importanceLevel: Card["importanceLevel"]) => {
-    let starCount: number;
-    switch (importanceLevel) {
-      case "high":
-        starCount = 3;
-        break;
-      case "medium":
-        starCount = 2;
-        break;
-      case "low":
-        starCount = 1;
-        break;
-      default:
-        starCount = 0;
-    }
-
-    const handleCreateCard = () => {
-      const newCard: Card = {
-        id: (cards.length + 1).toString(),
-        word1: language1,
-        word2: language2,
-        importanceLevel: "high", // Default to 'low', can be adjusted
-      };
-      setCards((prevCards) => [...prevCards, newCard]);
-      setLanguage1("");
-      setLanguage2("");
-      setIsModalVisible(false);
-    };
-
-    return (
-      <View style={styles.starContainer}>
-        {[...Array(3)].map((_, index) => (
-          <Text
-            key={index}
-            style={[
-              styles.starIcon,
-              { color: index < starCount ? "#00D078" : "#eaedf3" },
-            ]}
-          >
-            ★
-          </Text>
-        ))}
-      </View>
-    );
-  };
-
-  const renderItem: ListRenderItem<Card> = ({ item }) => (
-    <GestureHandlerRootView>
-      <Swipeable
-        renderRightActions={() => renderRightActions(item.id)}
-        renderLeftActions={() => renderLeftActions(item.id)} // Left swipe for edit
-        friction={2}
-        overshootRight={false}
-      >
-        <View
-          style={[
-            styles.cardContainer,
-            { backgroundColor: "white", width: width * 0.95 },
-          ]}
-        >
-          <View style={styles.cardStyles}>
-            <View style={styles.cardContent}>
-              <Text style={styles.wordEnglish}>{item.word1}</Text>
-              <Text style={styles.wordTranslation}>{item.word2}</Text>
-            </View>
-            {renderStars(item.importanceLevel)}
-          </View>
-        </View>
-      </Swipeable>
-    </GestureHandlerRootView>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.appBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <LeftArrow />
-        </TouchableOpacity>
-        <Text style={styles.appbarText}>Biology</Text>
-      </View>
-      <FlatList
-        data={cards}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.flatListContent}
+      <Header />
+
+      <CardList
+        cards={cards}
+        onDeleteCard={handleDeleteCard}
+        onEditCard={handleEditCard}
       />
+
       <View style={styles.bottomButton}>
-        <View style={{ position: "relative" }}>
-          <TouchableOpacity
-            onPress={() => setIsDropDownVisible(!isDropDownVisible)}
-            style={[
-              styles.buttonStyles,
-              {
-                backgroundColor: "#4f42d8",
-                shadowColor: "#4f42d8",
-                flexDirection: "row",
-                alignItems: "center",
-                width: 180,
-                position: "relative",
-              },
-            ]}
-          >
-            <PlayIcon />
-            <Text style={styles.buttonText}>Play</Text>
-            <Text style={{ color: "white", fontSize: 12 }}>
-              {isDropDownVisible ? "▲" : "▼"}
-            </Text>
-          </TouchableOpacity>
-
-          {isDropDownVisible && (
-            <View style={styles.dropDown}>
-              <Text style={styles.dropdownTitle}>Çalışma Modu Seç</Text>
-              <View style={styles.dropdownDivider} />
-
-              <TouchableOpacity style={styles.dropdownItem}>
-                <Text style={styles.dropdownText}>📚 Öğrenme Modu</Text>
-                <Text style={styles.dropdownSubtext}>Temel tekrar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.dropdownItem}>
-                <Text style={styles.dropdownText}>🃏 Kartları Çevir</Text>
-                <Text style={styles.dropdownSubtext}>Hızlı test</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.dropdownItem}>
-                <Text style={styles.dropdownText}>🔀 Karıştırılmış</Text>
-                <Text style={styles.dropdownSubtext}>Rastgele sıra</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-        <TouchableOpacity
-          onPress={() => setIsModalVisible(true)}
-          style={[
-            styles.buttonStyles,
-            { backgroundColor: "#48c590", shadowColor: "#48c590" },
-          ]}
-        >
-          <EditIcon color="white" />
-          <Text style={styles.buttonText}>Create</Text>
-        </TouchableOpacity>
+        <BottomButton />
+        <CustomButton onPress={() => setIsModalVisible(true)} />
       </View>
 
-      {/* Modal for creating new card */}
       <Modal
         visible={isModalVisible}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setIsModalVisible(false)}
       >
-        <View style={styles.modalBackground}>
-          <View style={styles.modalContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Language 1"
-              value={language1}
-              onChangeText={setLanguage1}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Language 2"
-              value={language2}
-              onChangeText={setLanguage2}
-            />
-            <TouchableOpacity
-              onPress={handleDeleteCard}
-              style={styles.createButton}
-            >
-              <Text style={styles.createButtonText}>Create Card</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setIsModalVisible(false)}
-              style={styles.closeButton}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
+        <View style={modalStyles.centeredView}>
+          <View style={modalStyles.modalView}>
+            <Text style={modalStyles.modalTitle}>Create New Card</Text>
+
+            <View style={modalStyles.inputContainer}>
+              <Text style={modalStyles.inputLabel}>Word</Text>
+              <TextInput
+                style={modalStyles.input}
+                placeholder="Enter word"
+                value={newCardWord1}
+                onChangeText={setNewCardWord1}
+              />
+            </View>
+
+            <View style={modalStyles.inputContainer}>
+              <Text style={modalStyles.inputLabel}>Translation</Text>
+              <TextInput
+                style={modalStyles.input}
+                placeholder="Enter translation"
+                value={newCardWord2}
+                onChangeText={setNewCardWord2}
+              />
+            </View>
+
+            <View style={modalStyles.importanceContainer}>
+              <Text style={modalStyles.inputLabel}>Importance Level</Text>
+              <View style={modalStyles.importanceOptions}>
+                <TouchableOpacity
+                  style={[
+                    modalStyles.importanceButton,
+                    importanceLevel === "low" && modalStyles.selectedImportance,
+                  ]}
+                  onPress={() => setImportanceLevel("low")}
+                >
+                  <Text style={modalStyles.importanceText}>Low</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    modalStyles.importanceButton,
+                    importanceLevel === "medium" &&
+                      modalStyles.selectedImportance,
+                  ]}
+                  onPress={() => setImportanceLevel("medium")}
+                >
+                  <Text style={modalStyles.importanceText}>Medium</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    modalStyles.importanceButton,
+                    importanceLevel === "high" &&
+                      modalStyles.selectedImportance,
+                  ]}
+                  onPress={() => setImportanceLevel("high")}
+                >
+                  <Text style={modalStyles.importanceText}>High</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={modalStyles.buttonContainer}>
+              <TouchableOpacity
+                style={[modalStyles.button, modalStyles.cancelButton]}
+                onPress={() => {
+                  setIsModalVisible(false);
+                  setNewCardWord1("");
+                  setNewCardWord2("");
+                  setImportanceLevel("low");
+                }}
+              >
+                <Text style={modalStyles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  modalStyles.button,
+                  modalStyles.saveButton,
+                  (!newCardWord1 || !newCardWord2) &&
+                    modalStyles.disabledButton,
+                ]}
+                disabled={!newCardWord1 || !newCardWord2}
+                onPress={handleAddCard}
+              >
+                <Text style={modalStyles.saveButtonText}>Add Card</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -296,6 +192,14 @@ const CardDecks: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  bottomButton: {
+    display: "flex",
+    position: "absolute",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+    bottom: 50,
+  },
   container: {
     flex: 1,
     backgroundColor: "#F0F0F0",
@@ -346,6 +250,18 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
+  deleteButton: {
+    backgroundColor: "#FF0000", // Add color for the edit button
+    justifyContent: "center",
+    alignItems: "center",
+    width: 100,
+    height: 80,
+    borderRadius: 10,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+  },
   starContainer: {
     flexDirection: "row",
     marginTop: 5,
@@ -359,28 +275,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 10,
-  },
-  appBar: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    justifyContent: "space-between",
-    margin: 2,
-    paddingHorizontal: 20,
-  },
-  appbarText: {
-    marginLeft: 20,
-    fontSize: 24,
-    fontWeight: "700",
-  },
-  bottomButton: {
-    display: "flex",
-    position: "absolute",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    bottom: 50,
   },
   buttonStyles: {
     display: "flex",
@@ -446,55 +340,110 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#888",
   },
-  modalBackground: {
+});
+
+const modalStyles = StyleSheet.create({
+  centeredView: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
-  modalContainer: {
+  modalView: {
+    width: width * 0.85,
     backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    width: "80%",
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 20,
+    color: "#4f42d8",
+    textAlign: "center",
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    marginBottom: 6,
+    color: "#333",
   },
   input: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
-    marginBottom: 10,
-    padding: 10,
-  },
-  createButton: {
-    backgroundColor: "#48c590",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  createButtonText: {
-    color: "white",
-  },
-  closeButton: {
-    backgroundColor: "#ccc",
-    padding: 10,
-    marginTop: 10,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  closeButtonText: {
-    color: "white",
-  },
-  deleteButton: {
-    backgroundColor: "red",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 100,
-    height: 80,
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
     borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    backgroundColor: "#f9f9f9",
   },
-  deleteButtonText: {
+  importanceContainer: {
+    marginBottom: 25,
+  },
+  importanceOptions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  importanceButton: {
+    flex: 1,
+    padding: 10,
+    margin: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    alignItems: "center",
+  },
+  selectedImportance: {
+    backgroundColor: "#4f42d8",
+    borderColor: "#4f42d8",
+  },
+  importanceText: {
+    fontWeight: "500",
+    fontSize: 14,
+    color: "#333",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  button: {
+    flex: 1,
+    borderRadius: 15,
+    padding: 12,
+    marginHorizontal: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelButton: {
+    backgroundColor: "#f2f2f2",
+  },
+  saveButton: {
+    backgroundColor: "#48c590",
+  },
+  disabledButton: {
+    backgroundColor: "#a8dbc7",
+    opacity: 0.7,
+  },
+  cancelButtonText: {
+    color: "#666",
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  saveButtonText: {
     color: "white",
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 16,
   },
 });
-
 export default CardDecks;

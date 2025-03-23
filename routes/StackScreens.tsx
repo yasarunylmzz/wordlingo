@@ -18,7 +18,7 @@ import SavedBeneficary from "../screens/SavedBeneficary";
 import FaceId from "../screens/FaceId";
 import HelpAndSupport from "../screens/HelpAndSupport";
 import AboutApp from "../screens/AboutApp";
-import FlipCardScreen from "../screens/FlipCardScreen";
+import FlipCardScreen from "../screens/FlipCardScreen/FlipCardScreen";
 import NotificationScreen from "../screens/NotificationScreen";
 
 const Stack = createStackNavigator();

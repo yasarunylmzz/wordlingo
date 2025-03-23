@@ -10,21 +10,17 @@ import {
   Image,
 } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
-import FlipCard from "../Components/FlipCard/FlipCard";
 import { MaterialIcons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import LeftArrow from "../svg/LeftArrow";
-import ThumbsUp from "../svg/ThumbsUp";
-import Confuse from "../svg/Confuse";
+
 import { useNavigation } from "@react-navigation/native";
+import LeftArrow from "../../svg/LeftArrow";
+import FlipCard from "./Components/FlipCard";
+import Confuse from "../../svg/Confuse";
+import ThumbsUp from "../../svg/ThumbsUp";
 
 const FlipCardScreen = () => {
   const navigation = useNavigation();
-  const isFlipped = useSharedValue(0);
-
-  const toggleFlip = () => {
-    isFlipped.value = isFlipped.value === 0 ? 1 : 0;
-  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -68,18 +64,9 @@ const FlipCardScreen = () => {
         {/* Kart Bölgesi */}
         <View style={styles.cardContainer}>
           <FlipCard
-            isFlipped={isFlipped}
-            cardStyle={styles.card}
-            RegularContent={
-              <TouchableOpacity onPress={toggleFlip} style={styles.frontCard}>
-                <Text style={styles.cardText}>Ön Yüz</Text>
-              </TouchableOpacity>
-            }
-            FlippedContent={
-              <TouchableOpacity onPress={toggleFlip} style={styles.backCard}>
-                <Text style={styles.cardText}>Arka Yüz</Text>
-              </TouchableOpacity>
-            }
+            RegularContent={<Text style={styles.cardText}>Ön Yüz</Text>}
+            FlippedContent={<Text style={styles.cardText}>Arka Yüz</Text>}
+            cardStyle={undefined}
           />
         </View>
 
@@ -175,29 +162,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  card: {
-    width: "90%",
-    height: "90%",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  frontCard: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#D8BFD8",
-    borderRadius: 10,
-  },
-  backCard: {
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#90EE90",
-    borderRadius: 10,
-  },
+
   cardText: {
     fontSize: 18,
     fontWeight: "bold",
