@@ -4,11 +4,14 @@
     "slug": "wordLingo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./svg/Frame.tsx",
+    "icon": "./svg/Frame.svg",
     "userInterfaceStyle": "light",
-
+    "reactNative": {
+      "newArchEnabled": true
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yasarunylmzz.wordLingo"
     },
     "android": {
       "adaptiveIcon": {

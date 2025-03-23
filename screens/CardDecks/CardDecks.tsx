@@ -16,10 +16,10 @@ import {
   Swipeable,
 } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
-import LeftArrow from "../svg/LeftArrow";
-import GarbageIcon from "../svg/GarbageIcon";
-import PlayIcon from "../svg/PlayIcon";
-import EditIcon from "../svg/EditIcon";
+import LeftArrow from "../../svg/LeftArrow";
+import PlayIcon from "../../svg/PlayIcon";
+import EditIcon from "../../svg/EditIcon";
+import GarbageIcon from "../../svg/GarbageIcon";
 
 const { width } = Dimensions.get("window");
 
@@ -32,6 +32,18 @@ interface Card {
 
 const CardDecks: React.FC = () => {
   const navigation = useNavigation();
+
+  const [isDropDownVisible, setIsDropDownVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [language1, setLanguage1] = useState("");
+  const [language2, setLanguage2] = useState("");
+  console.log(isDropDownVisible);
+
+  const handleEditCard = (id: string) => {
+    // Open edit modal or perform other editing actions
+    console.log(`Edit card with ID: ${id}`);
+  };
+
   const [cards, setCards] = useState<Card[]>([
     {
       id: "1",
@@ -77,17 +89,8 @@ const CardDecks: React.FC = () => {
     },
   ]);
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [language1, setLanguage1] = useState("");
-  const [language2, setLanguage2] = useState("");
-
   const handleDeleteCard = (id: string) => {
     setCards((prevCards) => prevCards.filter((card) => card.id !== id));
-  };
-
-  const handleEditCard = (id: string) => {
-    // Open edit modal or perform other editing actions
-    console.log(`Edit card with ID: ${id}`);
   };
 
   const renderRightActions = (id: string) => (
@@ -99,7 +102,6 @@ const CardDecks: React.FC = () => {
       </View>
     </TouchableOpacity>
   );
-
   const renderLeftActions = (id: string) => (
     <TouchableOpacity onPress={() => handleEditCard(id)}>
       <View style={styles.editButton}>
@@ -125,6 +127,19 @@ const CardDecks: React.FC = () => {
       default:
         starCount = 0;
     }
+
+    const handleCreateCard = () => {
+      const newCard: Card = {
+        id: (cards.length + 1).toString(),
+        word1: language1,
+        word2: language2,
+        importanceLevel: "high", // Default to 'low', can be adjusted
+      };
+      setCards((prevCards) => [...prevCards, newCard]);
+      setLanguage1("");
+      setLanguage2("");
+      setIsModalVisible(false);
+    };
 
     return (
       <View style={styles.starContainer}>
@@ -169,19 +184,6 @@ const CardDecks: React.FC = () => {
     </GestureHandlerRootView>
   );
 
-  const handleCreateCard = () => {
-    const newCard: Card = {
-      id: (cards.length + 1).toString(),
-      word1: language1,
-      word2: language2,
-      importanceLevel: "high", // Default to 'low', can be adjusted
-    };
-    setCards((prevCards) => [...prevCards, newCard]);
-    setLanguage1("");
-    setLanguage2("");
-    setIsModalVisible(false);
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.appBar}>
@@ -197,16 +199,50 @@ const CardDecks: React.FC = () => {
         contentContainerStyle={styles.flatListContent}
       />
       <View style={styles.bottomButton}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("FlipCardScreen" as never)}
-          style={[
-            styles.buttonStyles,
-            { backgroundColor: "#4f42d8", shadowColor: "#4f42d8" },
-          ]}
-        >
-          <PlayIcon />
-          <Text style={styles.buttonText}>Play</Text>
-        </TouchableOpacity>
+        <View style={{ position: "relative" }}>
+          <TouchableOpacity
+            onPress={() => setIsDropDownVisible(!isDropDownVisible)}
+            style={[
+              styles.buttonStyles,
+              {
+                backgroundColor: "#4f42d8",
+                shadowColor: "#4f42d8",
+                flexDirection: "row",
+                alignItems: "center",
+                width: 180,
+                position: "relative",
+              },
+            ]}
+          >
+            <PlayIcon />
+            <Text style={styles.buttonText}>Play</Text>
+            <Text style={{ color: "white", fontSize: 12 }}>
+              {isDropDownVisible ? "▲" : "▼"}
+            </Text>
+          </TouchableOpacity>
+
+          {isDropDownVisible && (
+            <View style={styles.dropDown}>
+              <Text style={styles.dropdownTitle}>Çalışma Modu Seç</Text>
+              <View style={styles.dropdownDivider} />
+
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>📚 Öğrenme Modu</Text>
+                <Text style={styles.dropdownSubtext}>Temel tekrar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>🃏 Kartları Çevir</Text>
+                <Text style={styles.dropdownSubtext}>Hızlı test</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.dropdownItem}>
+                <Text style={styles.dropdownText}>🔀 Karıştırılmış</Text>
+                <Text style={styles.dropdownSubtext}>Rastgele sıra</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
         <TouchableOpacity
           onPress={() => setIsModalVisible(true)}
           style={[
@@ -241,7 +277,7 @@ const CardDecks: React.FC = () => {
               onChangeText={setLanguage2}
             />
             <TouchableOpacity
-              onPress={handleCreateCard}
+              onPress={handleDeleteCard}
               style={styles.createButton}
             >
               <Text style={styles.createButtonText}>Create Card</Text>
@@ -297,18 +333,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#575757",
   },
-  deleteButton: {
-    backgroundColor: "red",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 100,
-    height: 80,
-    borderRadius: 10,
-  },
-  deleteButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
+
   editButton: {
     backgroundColor: "#4f42d8", // Add color for the edit button
     justifyContent: "center",
@@ -354,8 +379,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     flexDirection: "row",
     justifyContent: "space-around",
-    width: "90%",
-    bottom: 65,
+    width: "100%",
+    bottom: 50,
   },
   buttonStyles: {
     display: "flex",
@@ -379,6 +404,47 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: "white",
     fontWeight: "bold",
+  },
+
+  dropDown: {
+    position: "absolute",
+    backgroundColor: "white",
+    top: -260,
+    borderRadius: 12,
+    paddingVertical: 8,
+    width: 240,
+    shadowColor: "#4f42d8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 5,
+    zIndex: 999,
+  },
+  dropdownTitle: {
+    padding: 12,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4f42d8",
+  },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: "#eee",
+    marginHorizontal: 12,
+  },
+  dropdownItem: {
+    padding: 14,
+    paddingHorizontal: 16,
+    flexDirection: "column",
+    gap: 4,
+  },
+  dropdownText: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#2d2d2d",
+  },
+  dropdownSubtext: {
+    fontSize: 12,
+    color: "#888",
   },
   modalBackground: {
     flex: 1,
@@ -416,6 +482,18 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     color: "white",
+  },
+  deleteButton: {
+    backgroundColor: "red",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 100,
+    height: 80,
+    borderRadius: 10,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
   },
 });
 

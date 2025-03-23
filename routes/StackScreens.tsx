@@ -1,6 +1,6 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import LandingPages from "../screens/LandingPages/LandingPage";
-import LoginScreen from "../screens/LoginScreen";
+import LoginScreen from "../screens/LoginScreen/LoginScreen";
 import SignInScreen from "../screens/SignInScreen";
 import HomePage from "../screens/HomePage";
 import BottomScreen from "./BottomScreen";
@@ -11,8 +11,8 @@ import SelectionScreen1 from "../screens/LanguageSelectionPage/SelectionScreen1"
 import SelectionScreen2 from "../screens/LanguageSelectionPage/SelectionScreen2";
 import TwoFactorAuth from "../screens/TwoFactorAuth";
 import AllDecks from "../screens/AllDecks";
-import CreateCard from "../screens/CreateCard";
-import CardDecks from "../screens/CardDecks";
+import CreateDeck from "../screens/CreateDeck";
+import CardDecks from "../screens/CardDecks/CardDecks";
 import MyAccount from "../screens/MyAccount";
 import SavedBeneficary from "../screens/SavedBeneficary";
 import FaceId from "../screens/FaceId";
@@ -39,13 +39,17 @@ function StackScreens() {
       <Stack.Screen name="SignIn" component={SignInScreen} />
       <Stack.Screen name="FirstScreen" component={HomePage} />
       <Stack.Screen name="StatisticsScreen" component={StatisticScreen} />
-      <Stack.Screen name="BottomScreen" component={BottomScreen} />
+      <Stack.Screen
+        name="BottomScreen"
+        options={{ gestureEnabled: false }}
+        component={BottomScreen}
+      />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
       <Stack.Screen name="SearchScreen" component={SearchScreen} />
       <Stack.Screen name="SelectionScreen1" component={SelectionScreen1} />
       <Stack.Screen name="SelectionScreen2" component={SelectionScreen2} />
       <Stack.Screen name="TwoFactorAuth" component={TwoFactorAuth} />
-      <Stack.Screen name="CreateCard" component={CreateCard} />
+      <Stack.Screen name="CreateCard" component={CreateDeck} />
       <Stack.Screen name="CardDecks" component={CardDecks} />
       <Stack.Screen name="MyAccount" component={MyAccount} />
       <Stack.Screen name="SavedBeneficary" component={SavedBeneficary} />
