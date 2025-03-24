@@ -4,22 +4,12 @@ import {
   Text,
   StyleSheet,
   SafeAreaView,
-  FlatList,
   Dimensions,
   TouchableOpacity,
-  ListRenderItem,
   Modal,
   TextInput,
 } from "react-native";
-import {
-  GestureHandlerRootView,
-  Swipeable,
-} from "react-native-gesture-handler";
-import { useNavigation } from "@react-navigation/native";
-import LeftArrow from "../../svg/LeftArrow";
-import PlayIcon from "../../svg/PlayIcon";
-import EditIcon from "../../svg/EditIcon";
-import GarbageIcon from "../../svg/GarbageIcon";
+
 import Header from "./Components/Header";
 import BottomButton from "./Components/BottomButton";
 import CardList from "./Components/CardList";

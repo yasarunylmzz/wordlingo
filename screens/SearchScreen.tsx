@@ -69,7 +69,7 @@ const SearchScreen: React.FC<SearchScreenProps> = () => {
         setWordData(result.slice(0, 10));
       } catch (err) {
         console.error("Error fetching word details:", err);
-        setError("check word and try again");
+        setError("Check word and try again");
         setWordData(null);
       } finally {
         setLoading(false);
@@ -85,10 +85,10 @@ const SearchScreen: React.FC<SearchScreenProps> = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.topText}>Search Screen</Text>
+      <Text style={styles.topText}>Dictionary</Text>
       <View style={styles.searchContainer}>
         <TextInput
-          placeholder="Search"
+          placeholder="Search for a word..."
           mode="outlined"
           style={styles.searchInput}
           value={searchQuery}
@@ -98,17 +98,30 @@ const SearchScreen: React.FC<SearchScreenProps> = () => {
           }}
           theme={{
             colors: {
-              primary: "#133266",
+              primary: "#6A5ACD",
               background: "#fff",
             },
           }}
           outlineColor="transparent"
-          activeOutlineColor="transparent"
+          activeOutlineColor="#6A5ACD"
+          left={<TextInput.Icon icon="magnify" color="#6A5ACD" />}
+          clearButtonMode="while-editing"
         />
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#133266" />}
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6A5ACD" />
+          <Text style={styles.loadingText}>Searching...</Text>
+        </View>
+      )}
+
+      {error && (
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error-outline" size={24} color="#FF6B6B" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
 
       {wordData && (
         <FlatList
@@ -123,50 +136,58 @@ const SearchScreen: React.FC<SearchScreenProps> = () => {
 
             return (
               <View style={styles.wordContainer}>
-                <Text style={styles.wordTitle}>
-                  {capitalizeFirstLetter(item.word)}
-                </Text>
+                <View style={styles.wordHeaderContainer}>
+                  <Text style={styles.wordTitle}>
+                    {capitalizeFirstLetter(item.word)}
+                  </Text>
 
-                {/* Sadece dolu phonetics öğelerini gösterin */}
-                {validPhonetics.length > 0 &&
-                  validPhonetics.map((phonetic, phoneticIndex) => (
-                    <View key={phoneticIndex} style={styles.phoneticContainer}>
-                      <Text style={styles.phoneticText}>
-                        {phonetic.text || ""}
-                      </Text>
-                      {phonetic.audio && (
-                        <TouchableOpacity
-                          style={styles.playButton}
-                          onPress={() =>
-                            phonetic.audio && playSound(phonetic.audio)
-                          }
-                        >
-                          <MaterialIcons
-                            name="play-arrow"
-                            size={24}
-                            color="#133266"
-                          />
-                          <Text style={styles.playButtonText}>Play</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  ))}
+                  {validPhonetics.length > 0 && validPhonetics[0].audio && (
+                    <TouchableOpacity
+                      style={styles.playButton}
+                      onPress={() =>
+                        validPhonetics[0].audio &&
+                        playSound(validPhonetics[0].audio)
+                      }
+                    >
+                      <MaterialIcons
+                        name="volume-up"
+                        size={24}
+                        color="#6A5ACD"
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Phonetics display */}
+                {validPhonetics.length > 0 && (
+                  <Text style={styles.phoneticText}>
+                    {validPhonetics[0].text || ""}
+                  </Text>
+                )}
+
+                <View style={styles.divider} />
 
                 {item.meanings.map((meaning, meaningIndex) => (
                   <View key={meaningIndex} style={styles.meaningContainer}>
-                    <Text style={styles.partOfSpeech}>
-                      {capitalizeFirstLetter(meaning.partOfSpeech)}
-                    </Text>
+                    <View style={styles.partOfSpeechContainer}>
+                      <Text style={styles.partOfSpeech}>
+                        {capitalizeFirstLetter(meaning.partOfSpeech)}
+                      </Text>
+                    </View>
+
                     {meaning.definitions.map((definition, defIndex) => (
                       <View key={defIndex} style={styles.definitionContainer}>
-                        <Text style={styles.text2}>
-                          {definition.definition}
-                        </Text>
-                        {definition.example && (
-                          <Text style={styles.exampleText}>
-                            Example: {definition.example}
+                        <View style={styles.bulletPoint} />
+                        <View style={styles.definitionContent}>
+                          <Text style={styles.definitionText}>
+                            {definition.definition}
                           </Text>
-                        )}
+                          {definition.example && (
+                            <Text style={styles.exampleText}>
+                              "{definition.example}"
+                            </Text>
+                          )}
+                        </View>
                       </View>
                     ))}
                   </View>
@@ -176,6 +197,15 @@ const SearchScreen: React.FC<SearchScreenProps> = () => {
           }}
         />
       )}
+
+      {!loading && !error && !wordData && (
+        <View style={styles.emptyStateContainer}>
+          <MaterialIcons name="search" size={64} color="#E0E0E0" />
+          <Text style={styles.emptyStateText}>
+            Type a word to get its definition
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -184,103 +214,152 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
-    backgroundColor: "#f9f9fb",
+    backgroundColor: "#F8F8FC",
   },
   topText: {
     width: "90%",
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "#4f24d8",
+    color: "#6A5ACD",
     marginTop: 20,
     marginBottom: 20,
   },
   searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "95%",
-    backgroundColor: "#fff",
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
+    width: "90%",
+    marginBottom: 20,
   },
   searchInput: {
-    flex: 1,
-    fontSize: 18,
-    backgroundColor: "transparent",
+    fontSize: 16,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  loadingContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#666",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFE8E8",
+    padding: 16,
+    borderRadius: 8,
+    marginVertical: 20,
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontSize: 16,
+    marginLeft: 8,
   },
   flatList: {
     width: "90%",
   },
   wordContainer: {
-    backgroundColor: "#fff",
-    borderColor: "black",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 15,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 20,
     marginVertical: 10,
-    shadowColor: "#4f24d8",
-    shadowOffset: { width: 0, height: 5 },
+    shadowColor: "#6A5ACD",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  wordHeaderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
   },
   wordTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: "bold",
-    color: "black",
-    marginBottom: 8,
+    color: "#333333",
   },
   phoneticContainer: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     marginVertical: 4,
   },
   phoneticText: {
     fontSize: 18,
-    color: "#575757",
+    color: "#777777",
     fontStyle: "italic",
+    marginBottom: 12,
   },
   playButton: {
-    flexDirection: "row",
     alignItems: "center",
-    marginLeft: 8,
+    justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#F0EEFF",
   },
-  playButtonText: {
-    marginLeft: 4,
-    fontSize: 16,
-    color: "black",
+  divider: {
+    height: 1,
+    backgroundColor: "#E5E5E5",
+    marginVertical: 12,
   },
   meaningContainer: {
-    marginTop: 10,
+    marginTop: 16,
+  },
+  partOfSpeechContainer: {
+    marginBottom: 12,
   },
   partOfSpeech: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "black",
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#6A5ACD",
     textTransform: "capitalize",
-    marginBottom: 4,
   },
   definitionContainer: {
-    marginVertical: 6,
+    flexDirection: "row",
+    marginBottom: 14,
   },
-  text2: {
+  bulletPoint: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#6A5ACD",
+    marginTop: 8,
+    marginRight: 12,
+  },
+  definitionContent: {
+    flex: 1,
+  },
+  definitionText: {
     fontSize: 16,
-    color: "#333",
+    color: "#333333",
+    lineHeight: 22,
   },
   exampleText: {
     fontSize: 15,
-    color: "#4f24d8",
+    color: "#777777",
     fontStyle: "italic",
-    marginTop: 2,
+    marginTop: 6,
+    lineHeight: 20,
   },
-  errorText: {
-    color: "red",
-    fontSize: 24,
+  emptyStateContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
+  },
+  emptyStateText: {
+    marginTop: 16,
+    fontSize: 18,
+    color: "#999999",
+    textAlign: "center",
   },
 });
 

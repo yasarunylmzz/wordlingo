@@ -8,20 +8,51 @@ import {
   Image,
   ScrollView,
   SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from "react-native";
 import LeftArrow from "../svg/LeftArrow";
 
-const MyAccount = ({ navigation }: any) => {
+const InputField = ({
+  label,
+  value,
+  editable,
+  onChangeText,
+  keyboardType = "default",
+  isRequired = false,
+}) => (
+  <View style={styles.inputContainer}>
+    <View style={styles.labelContainer}>
+      <Text style={styles.label}>{label}</Text>
+      {isRequired && <Text style={styles.requiredStar}>*</Text>}
+    </View>
+    <TextInput
+      style={[
+        styles.input,
+        editable ? styles.editableInput : styles.readOnlyInput,
+      ]}
+      value={value}
+      editable={editable}
+      onChangeText={onChangeText}
+      keyboardType={keyboardType}
+      placeholderTextColor="#A0A0A0"
+    />
+  </View>
+);
+
+const MyAccount = ({ navigation }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState({
-    username: "johndoe123",
-    firstName: "John",
-    lastName: "Doe",
-    email: "johndoe@example.com",
+    username: "yasarunyilmz",
+    firstName: "Yaşar",
+    lastName: "Ünyılmaz",
+    email: "yasar@example.com",
     phone: "123-456-7890",
+    address: "İstanbul, Türkiye",
   });
 
-  const handleInputChange = ({ key, value }: any) => {
+  const handleInputChange = (key, value) => {
     setUserData((prev) => ({
       ...prev,
       [key]: value,
@@ -29,167 +60,293 @@ const MyAccount = ({ navigation }: any) => {
   };
 
   const toggleEdit = () => {
+    if (isEditing) {
+      // Saving logic would go here
+      Alert.alert("Success", "Profile information updated successfully!");
+    }
     setIsEditing(!isEditing);
   };
 
   const handleBack = () => {
-    if (navigation && navigation.goBack) {
+    if (isEditing) {
+      Alert.alert(
+        "Unsaved Changes",
+        "You have unsaved changes. Are you sure you want to go back?",
+        [
+          { text: "Stay", style: "cancel" },
+          {
+            text: "Discard Changes",
+            style: "destructive",
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    } else {
       navigation.goBack();
     }
   };
 
   return (
-    <SafeAreaView style={styles.safearea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.appBar}>
-          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Text style={styles.backButtonText}>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        {/* Simplified Header */}
+        <View style={styles.header}>
+          <View style={styles.appBar}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <LeftArrow />
+            </TouchableOpacity>
+            <Text style={styles.appBarTitle}>My Account</Text>
+            <View style={styles.placeholder} />
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Profile Image Section */}
+          <View style={styles.profileSection}>
+            <View style={styles.imageContainer}>
+              <Image
+                source={{ uri: "https://via.placeholder.com/150" }}
+                style={styles.profileImage}
+              />
+              {isEditing && (
+                <TouchableOpacity style={styles.editImageButton}>
+                  <Text style={styles.editImageText}>Edit</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <Text style={styles.username}>@{userData.username}</Text>
+          </View>
+
+          {/* User Information Card */}
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+
+            <InputField
+              label="First Name"
+              value={userData.firstName}
+              editable={isEditing}
+              onChangeText={(text) => handleInputChange("firstName", text)}
+              isRequired={true}
+            />
+
+            <InputField
+              label="Last Name"
+              value={userData.lastName}
+              editable={isEditing}
+              onChangeText={(text) => handleInputChange("lastName", text)}
+              isRequired={true}
+            />
+
+            <InputField
+              label="Email Address"
+              value={userData.email}
+              editable={isEditing}
+              onChangeText={(text) => handleInputChange("email", text)}
+              keyboardType="email-address"
+              isRequired={true}
+            />
+
+            <InputField
+              label="Phone Number"
+              value={userData.phone}
+              editable={isEditing}
+              onChangeText={(text) => handleInputChange("phone", text)}
+              keyboardType="phone-pad"
+            />
+
+            <InputField
+              label="Address"
+              value={userData.address}
+              editable={isEditing}
+              onChangeText={(text) => handleInputChange("address", text)}
+            />
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.actionButton,
+              isEditing ? styles.saveButton : styles.editButton,
+            ]}
+            onPress={toggleEdit}
+          >
+            <Text style={styles.buttonText}>
+              {isEditing ? "Save Changes" : "Edit Profile"}
             </Text>
           </TouchableOpacity>
-          <Text style={styles.appBarTitle}>My Account</Text>
-        </View>
 
-        <View style={styles.profileHeader}>
-          <Image
-            source={{ uri: "https://via.placeholder.com/100" }}
-            style={styles.profileImage}
-          />
-          <Text style={styles.username}>{userData.username}</Text>
-        </View>
-
-        <View style={styles.infoSection}>
-          <Text style={styles.label}>First Name</Text>
-          <TextInput
-            style={[
-              styles.input,
-              isEditing ? styles.editableInput : styles.readOnlyInput,
-            ]}
-            value={userData.firstName}
-            editable={isEditing}
-            onChangeText={(text) => handleInputChange("firstName", text)}
-          />
-
-          <Text style={styles.label}>Last Name</Text>
-          <TextInput
-            style={[
-              styles.input,
-              isEditing ? styles.editableInput : styles.readOnlyInput,
-            ]}
-            value={userData.lastName}
-            editable={isEditing}
-            onChangeText={(text) => handleInputChange("lastName", text)}
-          />
-
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={[
-              styles.input,
-              isEditing ? styles.editableInput : styles.readOnlyInput,
-            ]}
-            value={userData.email}
-            editable={isEditing}
-            onChangeText={(text) => handleInputChange("email", text)}
-          />
-
-          <Text style={styles.label}>Phone</Text>
-          <TextInput
-            style={[
-              styles.input,
-              isEditing ? styles.editableInput : styles.readOnlyInput,
-            ]}
-            value={userData.phone}
-            editable={isEditing}
-            onChangeText={(text) => handleInputChange("phone", text)}
-          />
-        </View>
-
-        <TouchableOpacity style={styles.editButton} onPress={toggleEdit}>
-          <Text style={styles.buttonText}>{isEditing ? "Save" : "Edit"}</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          {!isEditing && (
+            <TouchableOpacity style={styles.deleteAccountButton}>
+              <Text style={styles.deleteAccountText}>Delete Account</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  safearea: {
+  safeArea: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   container: {
-    padding: 16,
+    flex: 1,
+  },
+  header: {
     backgroundColor: "#fff",
-    flexGrow: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e1e1e6",
+    paddingBottom: 0,
   },
   appBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 16,
-    backgroundColor: "#fff",
+    padding: 10,
   },
   backButton: {
-    marginRight: 16,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  backButtonText: {
-    fontSize: 18,
-    color: "#000",
+  placeholder: {
+    display: "flex",
+    width: "100%",
   },
   appBarTitle: {
-    fontSize: 20,
+    fontSize: 18,
     color: "#000",
     fontWeight: "bold",
   },
-  profileHeader: {
-    display: "flex",
-    flexDirection: "row",
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  profileSection: {
     alignItems: "center",
     marginBottom: 20,
-    gap: 10,
+  },
+  imageContainer: {
+    position: "relative",
+    marginBottom: 10,
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#4f24d8",
   },
-  username: {
-    fontSize: 18,
+  editImageButton: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    backgroundColor: "#4f24d8",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: "#fff",
+  },
+  editImageText: {
+    color: "#fff",
+    fontSize: 12,
     fontWeight: "bold",
   },
-  infoSection: {
+  username: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "600",
+    marginTop: 5,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 20,
+    color: "#333",
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  labelContainer: {
+    flexDirection: "row",
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,
-    color: "#555",
-    marginBottom: 4,
+    color: "#666",
+    fontWeight: "500",
+  },
+  requiredStar: {
+    color: "#ff3b30",
+    marginLeft: 4,
   },
   input: {
     fontSize: 16,
-    padding: 10,
+    padding: 15,
     borderWidth: 1,
-    borderRadius: 8,
-    marginBottom: 12,
+    borderRadius: 12,
+    backgroundColor: "#fff",
   },
   editableInput: {
-    backgroundColor: "#fff",
-    borderColor: "#007bff",
+    borderColor: "#4f24d8",
+    backgroundColor: "#fafafa",
   },
   readOnlyInput: {
-    backgroundColor: "#f1f1f1",
-    borderColor: "#ddd",
+    backgroundColor: "#f5f5f7",
+    borderColor: "#e1e1e6",
+    color: "#333",
+  },
+  actionButton: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   editButton: {
-    backgroundColor: "#007bff",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
+    backgroundColor: "#4f24d8",
+  },
+  saveButton: {
+    backgroundColor: "#22c55e",
   },
   buttonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  deleteAccountButton: {
+    alignItems: "center",
+    padding: 15,
+    marginBottom: 30,
+  },
+  deleteAccountText: {
+    color: "#ff3b30",
+    fontSize: 16,
+    fontWeight: "500",
   },
 });
 

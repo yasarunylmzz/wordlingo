@@ -1,5 +1,8 @@
 // FlipCardScreen.js
 
+/**
+ * use zustand for delete item from array and update the state with buttons in FlipCardScreen
+ *  */
 import React from "react";
 import {
   SafeAreaView,
@@ -9,7 +12,6 @@ import {
   View,
   Image,
 } from "react-native";
-import { useSharedValue } from "react-native-reanimated";
 import { MaterialIcons } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -63,11 +65,7 @@ const FlipCardScreen = () => {
 
         {/* Kart Bölgesi */}
         <View style={styles.cardContainer}>
-          <FlipCard
-            RegularContent={<Text style={styles.cardText}>Ön Yüz</Text>}
-            FlippedContent={<Text style={styles.cardText}>Arka Yüz</Text>}
-            cardStyle={undefined}
-          />
+          <FlipCard />
         </View>
 
         {/* Alt Butonlar */}

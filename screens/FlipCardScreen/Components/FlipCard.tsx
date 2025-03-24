@@ -1,5 +1,5 @@
-import React, { useMemo } from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useRef } from "react";
+import { View, StyleSheet, Text } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -7,14 +7,29 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-const FlipCard = ({ RegularContent, FlippedContent }) => {
-  const flippedValues = useMemo(() => {
-    return Array(4)
-      .fill(0)
-      .map(() => useSharedValue(0));
-  }, []);
+/**
+ *
+ * use zustand for card index and send to flipCardScreen for delete button
+ */
 
-  const toggleFlip = (index) => {
+const FlipCard = () => {
+  const [cardData, setCardData] = React.useState([
+    {
+      front: "Front 1",
+      back: "Back 1",
+    },
+    {
+      front: "Front 2",
+      back: "Back 2",
+    },
+    {
+      front: "Front 3",
+      back: "Back 3",
+    },
+  ]);
+  const flippedValuesRef = useRef(cardData.map(() => useSharedValue(0)));
+  const flippedValues = flippedValuesRef.current;
+  const toggleFlip = (index: number) => {
     flippedValues[index].value = flippedValues[index].value === 0 ? 1 : 0;
     console.log(`Card ${index} flipped: ${flippedValues[index].value}`);
   };
@@ -53,7 +68,11 @@ const FlipCard = ({ RegularContent, FlippedContent }) => {
             style={[
               {
                 zIndex: -index,
-                transform: [{ rotate: `${-index * 5}deg` }],
+                transform: [
+                  { rotate: `${-index * 5}deg` },
+                  { translateX: 0 },
+                  { translateY: 0 },
+                ],
 
                 borderRadius: 20,
                 position: "absolute",
@@ -73,7 +92,7 @@ const FlipCard = ({ RegularContent, FlippedContent }) => {
                 onTouchStart={() => toggleFlip(index)}
                 style={styles.frontCard}
               >
-                {RegularContent}
+                <Text>{cardData[index] ? cardData[index]["front"] : null}</Text>
               </View>
             </Animated.View>
             <Animated.View
@@ -83,7 +102,7 @@ const FlipCard = ({ RegularContent, FlippedContent }) => {
                 onTouchStart={() => toggleFlip(index)}
                 style={styles.backCard}
               >
-                {FlippedContent}
+                <Text>{cardData[index] ? cardData[index]["back"] : null}</Text>
               </View>
             </Animated.View>
           </View>

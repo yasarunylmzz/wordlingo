@@ -88,7 +88,7 @@ const BottomButton = () => {
                 ],
               }}
             >
-              <TouchableOpacity style={styles.dropdownItem}>
+              <TouchableOpacity onPress={() => navigation.navigate("LearnScreen")} style={styles.dropdownItem}>
                 <Text style={styles.dropdownText}>📚 Öğrenme Modu</Text>
                 <Text style={styles.dropdownSubtext}>Temel tekrar</Text>
               </TouchableOpacity>

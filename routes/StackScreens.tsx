@@ -20,6 +20,7 @@ import HelpAndSupport from "../screens/HelpAndSupport";
 import AboutApp from "../screens/AboutApp";
 import FlipCardScreen from "../screens/FlipCardScreen/FlipCardScreen";
 import NotificationScreen from "../screens/NotificationScreen";
+import LearnScreen from "../screens/LearnMode/LearnScreen";
 
 const Stack = createStackNavigator();
 
@@ -58,6 +59,7 @@ function StackScreens() {
       <Stack.Screen name="AboutApp" component={AboutApp} />
       <Stack.Screen name="FlipCardScreen" component={FlipCardScreen} />
       <Stack.Screen name="NotificationScreen" component={NotificationScreen} />
+      <Stack.Screen name="LearnScreen" component={LearnScreen} />
     </Stack.Navigator>
   );
 }
