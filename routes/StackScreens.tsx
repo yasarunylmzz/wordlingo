@@ -6,7 +6,6 @@ import HomePage from "../screens/HomePage";
 import BottomScreen from "./BottomScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import SearchScreen from "../screens/SearchScreen";
-import StatisticScreen from "../screens/StatisticsPage";
 import SelectionScreen1 from "../screens/LanguageSelectionPage/SelectionScreen1";
 import SelectionScreen2 from "../screens/LanguageSelectionPage/SelectionScreen2";
 import TwoFactorAuth from "../screens/TwoFactorAuth";
@@ -38,7 +37,6 @@ function StackScreens() {
       <Stack.Screen name="AllDecks" component={AllDecks} />
       <Stack.Screen name="SignIn" component={SignInScreen} />
       <Stack.Screen name="FirstScreen" component={HomePage} />
-      <Stack.Screen name="StatisticsScreen" component={StatisticScreen} />
       <Stack.Screen
         name="BottomScreen"
         options={{ gestureEnabled: false }}

@@ -11,7 +11,6 @@ import ProfileIcon from "../svg/ProfileIcon";
 import Avatar from "../svg/Avatar";
 import ButtonComponents from "../Components/ProfileScreenComponents/ButtonComponents";
 import LockIcon from "../svg/LockIcon";
-import TwoFactorIcon from "../svg/TwoFactorIcon";
 import LogoutIcon from "../svg/LogoutIcon";
 import NotificationIcon from "../svg/NotificationIcon";
 import HeartIcon from "../svg/HeartIcon";
@@ -78,6 +77,7 @@ const ProfileScreen = () => {
           }}
           style={styles.logoutSection}
         >
+          <LogoutIcon />
           <Text style={styles.logout}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -217,6 +217,8 @@ const styles = StyleSheet.create({
   },
   logoutSection: {
     display: "flex",
+    flexDirection: "row",
+    gap: 10,
     justifyContent: "flex-end",
     height: 150,
   },

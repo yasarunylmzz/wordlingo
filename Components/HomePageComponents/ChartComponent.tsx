@@ -34,11 +34,11 @@ const ChartComponent = ({ data, dates }: { data: any; dates: any }) => {
       <View style={styles.chartArea}>
         <LineChart
           width={screenWidth - 70}
-          height={screenHeight * 0.2}
+          height={screenHeight * 0.22}
           data={data}
           areaChart
           backgroundColor={"transparent"}
-          dataPointsColor="#4f41d8"
+          dataPointsColor="#6A5ACD"
           rulesColor={"#f0f0f5"}
           rulesType="solid"
           xAxisThickness={1}
@@ -51,32 +51,34 @@ const ChartComponent = ({ data, dates }: { data: any; dates: any }) => {
           xAxisLabelTexts={dates}
           disableScroll={true}
           xAxisLabelTextStyle={{
-            fontSize: 12,
+            fontSize: 11,
             color: "#6b7280",
             fontWeight: "500",
             textAlign: "center",
             marginTop: 5,
           }}
-          color1="#4f41d8"
+          color1="#6A5ACD"
           thickness1={3}
           curved={true}
           dataPointsRadius={5}
-          startFillColor="#e5e5f7"
+          startFillColor="#f0eeff"
           endFillColor="#f9f9fc"
-          startOpacity={0.7}
+          startOpacity={0.6}
           endOpacity={0.1}
           noOfSections={4}
           pointerConfig={{
             height: 12,
             width: 12,
-            pointerColor: "#4f41d8",
+            pointerColor: "#6A5ACD",
             pointerStripHeight: 130,
             pointerStripWidth: 1,
-            pointerStripColor: "rgba(79, 65, 216, 0.3)",
+            pointerStripColor: "rgba(106, 90, 205, 0.3)",
             showPointerStrip: true,
             pointerStripUptoDataPoint: true,
-            pointerLabelComponent: ({ data }: any) => {
-              const displayValue = data?.value ?? "No data";
+            pointerLabelComponent: (props: any) => {
+              // Check if data exists and has a valid value
+              const displayValue =
+                props.data?.value !== undefined ? props.data.value : "—";
               return (
                 <View style={styles.tooltipContainer}>
                   <Text style={styles.tooltipValue}>{displayValue}</Text>
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#4f41d8",
+    color: "#6A5ACD",
     marginBottom: 4,
   },
   statLabel: {
@@ -154,7 +156,7 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
   },
   tooltipContainer: {
-    backgroundColor: "#4f41d8",
+    backgroundColor: "#6A5ACD",
     padding: 6,
     borderRadius: 6,
     alignItems: "center",

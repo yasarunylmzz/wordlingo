@@ -286,12 +286,13 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: "#e5e5e5",
-    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: -8, // Adjust to move closer to author section
   },
   authorContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     paddingVertical: 12,
   },
   profileImage: {
