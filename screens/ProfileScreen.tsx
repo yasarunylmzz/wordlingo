@@ -1,4 +1,11 @@
-import { View, Text, ScrollView, SafeAreaView, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import React from "react";
 import ProfileIcon from "../svg/ProfileIcon";
 import Avatar from "../svg/Avatar";
@@ -41,23 +48,11 @@ const ProfileScreen = () => {
               icon={<ProfileIcon />}
             />
 
-            <ButtonComponents
-              targetScreen="SavedBeneficary"
-              title="Saved Beneficiary"
-              description="Make changes to your account"
-              icon={<ProfileIcon />}
-            />
-
             <SelectButton
               title="Face Id"
               description="Manage your saved account"
               icon={<LockIcon />}
             />
-            {/* <ButtonComponents
-              title="Log out"
-              description="Further secure your account for safety"
-              icon={<LogoutIcon />}
-            /> */}
           </View>
 
           <Text style={styles.more}>More</Text>
@@ -77,6 +72,14 @@ const ProfileScreen = () => {
             />
           </View>
         </View>
+        <TouchableOpacity
+          onPress={() => {
+            console.log("Log Out");
+          }}
+          style={styles.logoutSection}
+        >
+          <Text style={styles.logout}>Log Out</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     width: "95%",
-    height: 255,
+    height: 170,
     paddingHorizontal: 20,
     paddingVertical: 25,
     backgroundColor: "#fff",
@@ -211,6 +214,16 @@ const styles = StyleSheet.create({
   textSection2: {
     display: "flex",
     gap: 4,
+  },
+  logoutSection: {
+    display: "flex",
+    justifyContent: "flex-end",
+    height: 150,
+  },
+  logout: {
+    color: "#DC143C",
+    fontSize: 20,
+    fontWeight: "bold",
   },
 });
 export default ProfileScreen;

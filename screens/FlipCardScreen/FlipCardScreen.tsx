@@ -3,7 +3,7 @@
 /**
  * use zustand for delete item from array and update the state with buttons in FlipCardScreen
  *  */
-import React from "react";
+import React, { useState } from "react";
 import {
   SafeAreaView,
   StyleSheet,
@@ -23,6 +23,11 @@ import ThumbsUp from "../../svg/ThumbsUp";
 
 const FlipCardScreen = () => {
   const navigation = useNavigation();
+
+  const [activeButton, setActiveButton] = useState(null);
+  const handleButtonPress = (buttonType) => {
+    setActiveButton(buttonType);
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -66,19 +71,6 @@ const FlipCardScreen = () => {
         {/* Kart Bölgesi */}
         <View style={styles.cardContainer}>
           <FlipCard />
-        </View>
-
-        {/* Alt Butonlar */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={[styles.roundButton, styles.redButton]}>
-            <MaterialIcons name="close" size={30} color="#FF4242" />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.roundButton, styles.yellowButton]}>
-            <Confuse />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.roundButton, styles.greenButton]}>
-            <ThumbsUp />
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -166,29 +158,41 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
   },
-  buttonContainer: {
+  newButtonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingBottom: 20,
+    gap: 8, // Butonlar arası boşluk
   },
-  roundButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "white",
-    justifyContent: "center",
+  newButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 24, // Daha yuvarlak köşeler
+    borderWidth: 2, // Kalın kenarlık
     alignItems: "center",
-    borderWidth: 2,
+    backgroundColor: "transparent",
+    borderColor: "#E0E0E0", // Pasif durumda gri kenarlık
   },
-  redButton: {
-    borderColor: "#FF4242",
+  buttonText: {
+    color: "#757575", // Daha soft gri renk
+    fontWeight: "600",
+    fontSize: 14,
   },
-  yellowButton: {
+  activeButtonText: {
+    color: "white",
+    fontWeight: "700", // Aktif metin daha kalın
+  },
+  activeLearnButton: {
+    backgroundColor: "#FF4242",
+    borderColor: "#FF4242", // Kenarlık rengi arka planla aynı
+  },
+  activeReviewButton: {
+    backgroundColor: "orange",
     borderColor: "orange",
   },
-  greenButton: {
+  activeKnownButton: {
+    backgroundColor: "#00D078",
     borderColor: "#00D078",
   },
 });

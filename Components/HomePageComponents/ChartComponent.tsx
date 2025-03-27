@@ -6,89 +6,169 @@ const ChartComponent = ({ data, dates }: { data: any; dates: any }) => {
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
 
+  // Calculate some statistics
+  const values = data.map((item) => item.value);
+  const maxValue = Math.max(...values);
+  const avgValue = Math.round(
+    values.reduce((sum, value) => sum + value, 0) / values.length
+  );
+
   return (
-    <View style={styles.chartArea}>
-      <LineChart
-        width={screenWidth - 50}
-        height={screenHeight * 0.2}
-        data={data}
-        areaChart
-        backgroundColor={"white"}
-        dataPointsColor="#4f41d8"
-        stripColor={"#fae1e1"}
-        rulesColor={"#fff"}
-        xAxisThickness={0}
-        showXAxisIndices={false}
-        yAxisThickness={0}
-        hideYAxisText={true}
-        xAxisLabelTexts={dates}
-        disableScroll={true}
-        xAxisLabelTextStyle={{
-          fontSize: 14,
-          color: "gray",
-          fontWeight: "700",
-          textAlign: "center",
-        }}
-        color1="#4f41d8"
-        thickness1={7}
-        curved={true}
-        dataPointsRadius={6}
-        startFillColor="#e5e5f7"
-        endFillColor="#f3f3fb"
-        startOpacity={1}
-        endOpacity={0.5}
-        pointerConfig={{
-          height: 10,
-          width: 10,
-          pointerColor: "#4f41d8",
-          showPointerStrip: false,
-          pointerStripColor: "#133266",
-          pointerStripUptoDataPoint: true,
-          pointerLabelComponent: ({ data }: any) => {
-            const displayValue = data?.value ?? "No data";
-            return (
-              <View
-                style={{
-                  backgroundColor: "white",
-                  padding: 4,
-                  borderRadius: 5,
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    color: "green",
-                    fontWeight: "bold",
-                    textAlign: "center",
-                  }}
-                >
-                  {displayValue}
-                </Text>
-              </View>
-            );
-          },
-          pointerLabelWidth: 50,
-          pointerLabelHeight: 30,
-          shiftPointerLabelY: -40,
-          pointerVanishDelay: 300,
-          autoAdjustPointerLabelPosition: true,
-        }}
-      />
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Weekly Activity</Text>
+      </View>
+
+      <View style={styles.statsContainer}>
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{avgValue}</Text>
+          <Text style={styles.statLabel}>Daily Average</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Text style={styles.statValue}>{maxValue}</Text>
+          <Text style={styles.statLabel}>Highest</Text>
+        </View>
+      </View>
+
+      <View style={styles.chartArea}>
+        <LineChart
+          width={screenWidth - 70}
+          height={screenHeight * 0.2}
+          data={data}
+          areaChart
+          backgroundColor={"transparent"}
+          dataPointsColor="#4f41d8"
+          rulesColor={"#f0f0f5"}
+          rulesType="solid"
+          xAxisThickness={1}
+          xAxisColor="#e5e7eb"
+          showXAxisIndices={true}
+          xAxisIndicesHeight={3}
+          xAxisIndicesColor="#e5e7eb"
+          yAxisThickness={0}
+          hideYAxisText={true}
+          xAxisLabelTexts={dates}
+          disableScroll={true}
+          xAxisLabelTextStyle={{
+            fontSize: 12,
+            color: "#6b7280",
+            fontWeight: "500",
+            textAlign: "center",
+            marginTop: 5,
+          }}
+          color1="#4f41d8"
+          thickness1={3}
+          curved={true}
+          dataPointsRadius={5}
+          startFillColor="#e5e5f7"
+          endFillColor="#f9f9fc"
+          startOpacity={0.7}
+          endOpacity={0.1}
+          noOfSections={4}
+          pointerConfig={{
+            height: 12,
+            width: 12,
+            pointerColor: "#4f41d8",
+            pointerStripHeight: 130,
+            pointerStripWidth: 1,
+            pointerStripColor: "rgba(79, 65, 216, 0.3)",
+            showPointerStrip: true,
+            pointerStripUptoDataPoint: true,
+            pointerLabelComponent: ({ data }: any) => {
+              const displayValue = data?.value ?? "No data";
+              return (
+                <View style={styles.tooltipContainer}>
+                  <Text style={styles.tooltipValue}>{displayValue}</Text>
+                </View>
+              );
+            },
+            pointerLabelWidth: 55,
+            pointerLabelHeight: 30,
+            shiftPointerLabelY: -45,
+            pointerVanishDelay: 500,
+            autoAdjustPointerLabelPosition: true,
+          }}
+        />
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  chartArea: {
-    display: "flex",
-    justifyContent: "center",
-    width: "100%",
-    alignItems: "center",
-    padding: 5, // Remove extra padding to fit chart better
+  container: {
     backgroundColor: "#fff",
-    borderRadius: 10,
-    marginTop: 10,
-    overflow: "hidden", // Hide any overflow to keep clean boundaries
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginVertical: 8,
+  },
+  headerContainer: {
+    marginBottom: 14,
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#111827",
+  },
+  statsContainer: {
+    flexDirection: "row",
+    backgroundColor: "#f9fafb",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    alignItems: "center",
+  },
+  statItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#4f41d8",
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: "500",
+  },
+  statDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: "#e5e7eb",
+  },
+  chartArea: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    overflow: "hidden",
+    paddingTop: 10,
+    paddingBottom: 5,
+  },
+  tooltipContainer: {
+    backgroundColor: "#4f41d8",
+    padding: 6,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  tooltipValue: {
+    color: "#ffffff",
+    fontWeight: "bold",
+    fontSize: 13,
   },
 });
 

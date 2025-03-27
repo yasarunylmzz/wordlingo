@@ -68,9 +68,7 @@ const HomePage = () => {
               justifyContent: "space-between",
               alignItems: "center",
             }}
-          >
-            <Text style={styles.hiText3}>Overview</Text>
-          </View>
+          ></View>
           <OverviewComponent />
           <ChartComponent data={data} dates={dates} />
           <TodoComponents />
@@ -106,12 +104,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     padding: 15,
   },
-  hiText3: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#000",
-    marginBottom: 10,
-  },
+
   users: {
     display: "flex",
     justifyContent: "center",

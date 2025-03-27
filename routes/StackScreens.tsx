@@ -14,7 +14,6 @@ import AllDecks from "../screens/AllDecks";
 import CreateDeck from "../screens/CreateDeck";
 import CardDecks from "../screens/CardDecks/CardDecks";
 import MyAccount from "../screens/MyAccount";
-import SavedBeneficary from "../screens/SavedBeneficary";
 import FaceId from "../screens/FaceId";
 import HelpAndSupport from "../screens/HelpAndSupport";
 import AboutApp from "../screens/AboutApp";
@@ -53,7 +52,6 @@ function StackScreens() {
       <Stack.Screen name="CreateCard" component={CreateDeck} />
       <Stack.Screen name="CardDecks" component={CardDecks} />
       <Stack.Screen name="MyAccount" component={MyAccount} />
-      <Stack.Screen name="SavedBeneficary" component={SavedBeneficary} />
       <Stack.Screen name="FaceId" component={FaceId} />
       <Stack.Screen name="HelpAndSupport" component={HelpAndSupport} />
       <Stack.Screen name="AboutApp" component={AboutApp} />
