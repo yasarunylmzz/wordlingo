@@ -4,85 +4,97 @@ import {
   StyleSheet,
   SafeAreaView,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons"; // Expo'da Ionicons kullanımı, başka bir ikon kütüphanesi de tercih edebilirsiniz
-import { ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const HelpAndSupport = () => {
-  const navigation = useNavigation(); // Geri çıkma butonu için navigation kullanımı
+  const navigation = useNavigation();
+
+  const FAQS = [
+    {
+      question: "How do I reset my password?",
+      answer:
+        "If you've forgotten your password, you can reset it by visiting the password recovery section in the app's settings.",
+      icon: "key",
+    },
+    {
+      question: "How do I create a new flashcard deck?",
+      answer:
+        "Creating a new flashcard deck is easy! Simply go to the 'Decks' section and tap on the 'Create New Deck' button to get started.",
+      icon: "add-circle",
+    },
+    {
+      question: "How do I track my progress?",
+      answer:
+        "Your progress is automatically tracked by the app. You can view your stats and performance in the 'Progress' tab.",
+      icon: "stats-chart",
+    },
+    {
+      question: "How do I contact support?",
+      answer:
+        "You can contact our support team via email at info@wordlingo.com or by filling out the contact form in the 'Support' section.",
+      icon: "chatbubbles",
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView>
-        {/* Üst Kısım (Başlık ve Geri Butonu) */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#12175E" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Help & Support</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Help & Support</Text>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Hero Section */}
+        <View style={styles.heroContainer}>
+          <Ionicons name="help-buoy" size={48} color="#2F80ED" />
+          <Text style={styles.heroTitle}>How Can We Help You?</Text>
+          <Text style={styles.heroSubtitle}>
+            Find answers to common questions or contact our support team
+          </Text>
         </View>
 
-        {/* İçerik Bölümü */}
-        <View style={styles.content}>
-          <View style={styles.titleSection}>
-            <Text style={styles.title}>How Can We Help You?</Text>
-            <Text style={styles.subtitle}>
-              Here you'll find common questions and solutions. Feel free to
-              reach out if you need further assistance.
-            </Text>
-          </View>
+        {/* FAQ Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
+          {FAQS.map((faq, index) => (
+            <View key={index} style={styles.faqCard}>
+              <View style={styles.faqHeader}>
+                <Ionicons name={faq.icon} size={20} color="#2F80ED" />
+                <Text style={styles.faqQuestion}>{faq.question}</Text>
+              </View>
+              <Text style={styles.faqAnswer}>{faq.answer}</Text>
+            </View>
+          ))}
+        </View>
 
-          {/* Sıkça Sorulan Sorular (SSS) */}
-          <View style={styles.descriptionSection}>
-            <Text style={styles.featuresTitle}>
-              Frequently Asked Questions:
+        {/* Contact Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Direct Contact</Text>
+          <View style={styles.contactCard}>
+            <Ionicons name="mail" size={32} color="#2F80ED" />
+            <Text style={styles.contactTitle}>Email Support</Text>
+            <Text style={styles.contactText}>
+              We typically respond within 24 hours
             </Text>
-            <Text style={styles.featureItem}>
-              • How do I reset my password? {"\n"}If you've forgotten your
-              password, you can reset it by visiting the password recovery
-              section in the app's settings.
-            </Text>
-            <Text style={styles.featureItem}>
-              • How do I create a new flashcard deck? {"\n"}Creating a new
-              flashcard deck is easy! Simply go to the 'Decks' section and tap
-              on the 'Create New Deck' button to get started.
-            </Text>
-            <Text style={styles.featureItem}>
-              • How do I track my progress? {"\n"}Your progress is automatically
-              tracked by the app. You can view your stats and performance in the
-              'Progress' tab.
-            </Text>
-            <Text style={styles.featureItem}>
-              • How do I contact support? {"\n"}You can contact our support team
-              via email at support@wordlingo.com or by filling out the contact
-              form in the 'Support' section of the app.
-            </Text>
-          </View>
-
-          {/* İletişim Bilgileri */}
-          <View style={styles.contactSection}>
-            <Text style={styles.featuresTitle}>Need More Help?</Text>
-            <Text style={styles.description}>
-              If you couldn't find the answer you're looking for, please reach
-              out to our support team. We're here to help you with any issues or
-              questions you might have.
-            </Text>
-            <Text style={styles.contactInfo}>
-              Email us at: support@wordlingo.com
-            </Text>
+            <TouchableOpacity style={styles.emailButton}>
+              <Text style={styles.emailButtonText}>info@wordlingo.com</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © 2024 Word Lingo - All Rights Reserved
-          </Text>
+          <Text style={styles.footerText}>© 2024 Word Lingo</Text>
           <Text style={styles.footerText}>Version 1.0.0</Text>
         </View>
       </ScrollView>
@@ -93,84 +105,135 @@ const HelpAndSupport = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8F9FD",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff",
-    paddingVertical: 15,
-    position: "relative",
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEE",
   },
   backButton: {
-    position: "absolute",
-    left: 10,
-    padding: 10,
+    marginRight: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#12175E",
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#000",
   },
-  content: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "flex-start",
+  container: {
+    paddingBottom: 40,
   },
-  titleSection: {
-    marginBottom: 20,
+  heroContainer: {
+    alignItems: "center",
+    padding: 32,
+    backgroundColor: "#FFFFFF",
+    margin: 16,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#333",
+  heroTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#2D3436",
+    marginTop: 16,
     textAlign: "center",
   },
-  subtitle: {
+  heroSubtitle: {
     fontSize: 16,
-    color: "#777",
+    color: "#636E72",
     textAlign: "center",
     marginTop: 8,
-  },
-  descriptionSection: {
-    marginBottom: 20,
-  },
-  featuresTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#333",
-  },
-  featureItem: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 10,
-    lineHeight: 20,
-  },
-  contactSection: {
-    marginBottom: 30,
-  },
-  description: {
-    fontSize: 16,
-    textAlign: "center",
-    color: "#555",
     lineHeight: 22,
   },
-  contactInfo: {
+  section: {
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2D3436",
+    marginBottom: 16,
+    paddingLeft: 8,
+  },
+  faqCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  faqHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  faqQuestion: {
     fontSize: 16,
-    color: "#12175E",
-    marginTop: 10,
+    fontWeight: "500",
+    color: "#2D3436",
+    marginLeft: 12,
+    flex: 1,
+  },
+  faqAnswer: {
+    fontSize: 14,
+    color: "#636E72",
+    lineHeight: 20,
+    paddingLeft: 32,
+  },
+  contactCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 24,
+    alignItems: "center",
+  },
+  contactTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2D3436",
+    marginVertical: 16,
+  },
+  contactText: {
+    fontSize: 14,
+    color: "#636E72",
+    marginBottom: 16,
     textAlign: "center",
   },
-  footer: {
+  emailButton: {
+    backgroundColor: "#F0F5FF",
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    flexDirection: "row",
     alignItems: "center",
-    padding: 10,
-    backgroundColor: "#f5f5f5",
+  },
+  emailButtonText: {
+    color: "#2F80ED",
+    fontWeight: "500",
+    fontSize: 14,
+  },
+  footer: {
+    marginTop: 32,
+    alignItems: "center",
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#EEE",
   },
   footerText: {
     fontSize: 12,
-    color: "#888",
+    color: "#636E72",
+    marginBottom: 4,
   },
 });
 

@@ -8,20 +8,20 @@ import {
 } from "react-native";
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons"; // Expo'da Ionicons kullanımı, başka bir ikon kütüphanesi de tercih edebilirsiniz
+import { Ionicons } from "@expo/vector-icons";
 
 const AboutApp = () => {
-  const navigation = useNavigation(); // Geri çıkma butonu için navigation kullanımı
+  const navigation = useNavigation();
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header Section */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#12175E" />
+          <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>About App</Text>
       </View>
@@ -29,44 +29,63 @@ const AboutApp = () => {
       <ScrollView contentContainerStyle={styles.container}>
         {/* Title Section */}
         <View style={styles.titleSection}>
-          <Text style={styles.title}>Welcome to Word Lingo</Text>
-          <Text style={styles.subtitle}>Master Vocabulary with Flashcards</Text>
+          <Ionicons name="book" size={48} color="#2F80ED" style={styles.icon} />
+          <Text style={styles.title}>Word Lingo</Text>
+          <Text style={styles.subtitle}>Vocabulary Mastery App</Text>
         </View>
 
-        {/* Description Section */}
-        <View style={styles.descriptionSection}>
-          <Text style={styles.description}>
-            Word Lingo is an innovative flashcard app designed to help you
-            expand your vocabulary in a fun and effective way. Whether you're
-            preparing for a language exam or just love learning new words, Word
-            Lingo is your perfect companion.
-          </Text>
+        {/* Content Container */}
+        <View style={styles.content}>
+          {/* Description Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>About</Text>
+            <Text style={styles.description}>
+              Word Lingo is an innovative flashcard app designed to help you
+              expand your vocabulary in a fun and effective way. Perfect for
+              language learners and exam preparers, our app combines
+              science-backed techniques with intuitive design.
+            </Text>
+          </View>
+
+          {/* Features Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Key Features</Text>
+            <View style={styles.featureItem}>
+              <Ionicons name="add-circle" size={20} color="#2F80ED" />
+              <Text style={styles.featureText}>Create custom flashcards</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="stats-chart" size={20} color="#2F80ED" />
+              <Text style={styles.featureText}>Track learning progress</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="repeat" size={20} color="#2F80ED" />
+              <Text style={styles.featureText}>Smart spaced repetition</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="globe" size={20} color="#2F80ED" />
+              <Text style={styles.featureText}>Multiple language support</Text>
+            </View>
+          </View>
+
+          {/* Technical Info */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Technical</Text>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Version</Text>
+              <Text style={styles.infoValue}>1.0.0</Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text style={styles.infoLabel}>Developer</Text>
+              <Text style={styles.infoValue}>Lingo Team</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Features Section */}
-        <View style={styles.featuresSection}>
-          <Text style={styles.featuresTitle}>Key Features:</Text>
-          <Text style={styles.featureItem}>
-            • Create custom flashcard decks
-          </Text>
-          <Text style={styles.featureItem}>• Track progress and mastery</Text>
-          <Text style={styles.featureItem}>
-            • Spaced repetition for better retention
-          </Text>
-          <Text style={styles.featureItem}>
-            • Access pre-made word lists in multiple languages
-          </Text>
-          <Text style={styles.featureItem}>
-            • Dark mode for night-time studying
-          </Text>
-        </View>
-
-        {/* Footer Section */}
+        {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © 2024 Word Lingo - All Rights Reserved
-          </Text>
-          <Text style={styles.footerText}>Version 1.0.0</Text>
+          <Text style={styles.footerText}>© 2024 Word Lingo</Text>
+          <Text style={styles.footerText}>All rights reserved</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -76,83 +95,109 @@ const AboutApp = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F8F9FD",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff", // İstenilen renk tonu
-    paddingVertical: 15,
-    position: "relative",
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEE",
   },
   backButton: {
-    position: "absolute",
-    left: 10,
-    padding: 10,
-    color: "#12175E",
+    marginRight: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#12175E",
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#000",
   },
   container: {
-    flexGrow: 1,
-    backgroundColor: "#fff",
-    alignItems: "center",
-    padding: 20,
-    marginTop: 40,
+    paddingBottom: 40,
   },
   titleSection: {
     alignItems: "center",
-    marginBottom: 20,
+    paddingVertical: 32,
+    backgroundColor: "#FFFFFF",
+    width: "100%",
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  icon: {
+    marginBottom: 12,
   },
   title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#2D3436",
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: "#777",
-    marginTop: 4,
-    textAlign: "center",
+    color: "#636E72",
   },
-  descriptionSection: {
-    marginBottom: 20,
-    paddingHorizontal: 10,
+  content: {
+    paddingHorizontal: 20,
+  },
+  section: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#2D3436",
+    marginBottom: 16,
   },
   description: {
-    fontSize: 16,
-    textAlign: "center",
-    color: "#555",
+    fontSize: 15,
     lineHeight: 22,
-  },
-  featuresSection: {
-    width: "100%",
-    marginBottom: 20,
-    paddingHorizontal: 10,
-  },
-  featuresTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#333",
+    color: "#636E72",
   },
   featureItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  featureText: {
+    fontSize: 15,
+    marginLeft: 12,
+    color: "#2D3436",
+  },
+  infoItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    paddingVertical: 8,
+  },
+  infoLabel: {
     fontSize: 14,
-    color: "#555",
-    marginBottom: 6,
+    color: "#636E72",
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#2D3436",
   },
   footer: {
-    marginTop: 30,
+    marginTop: 32,
     alignItems: "center",
+    paddingTop: 24,
+    borderTopWidth: 1,
+    borderTopColor: "#EEE",
   },
   footerText: {
     fontSize: 12,
-    color: "#888",
+    color: "#636E72",
+    marginBottom: 4,
   },
 });
 

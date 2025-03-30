@@ -12,14 +12,14 @@ import {
   StatusBar,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import Icon from "react-native-vector-icons/MaterialIcons"; // Ensure you have this package installed
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 const FlashcardCreator = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [cards, setCards] = useState([
-    { id: 1, term: "", definition: "" },
-    { id: 2, term: "", definition: "" },
+    { id: 1, term: "", definition: "", importance: "medium" },
+    { id: 2, term: "", definition: "", importance: "medium" },
   ]);
   const navigation = useNavigation();
 
@@ -32,8 +32,8 @@ const FlashcardCreator = () => {
       alert("Title cannot be empty");
       return;
     }
-
     // Save logic here
+    console.log("Saved cards:", { title, description, cards });
     alert(`Saved: ${title}`);
   };
 
@@ -44,10 +44,20 @@ const FlashcardCreator = () => {
     setCards(updatedCards);
   };
 
+  const updateImportance = (id, level) => {
+    const updatedCards = cards.map((card) =>
+      card.id === id ? { ...card, importance: level } : card
+    );
+    setCards(updatedCards);
+  };
+
   const addCard = () => {
     const newId =
       cards.length > 0 ? Math.max(...cards.map((c) => c.id)) + 1 : 1;
-    setCards([...cards, { id: newId, term: "", definition: "" }]);
+    setCards([
+      ...cards,
+      { id: newId, term: "", definition: "", importance: "medium" },
+    ]);
   };
 
   const removeCard = (id) => {
@@ -62,13 +72,13 @@ const FlashcardCreator = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* Back Button Header */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Flashcards</Text>
-        <View style={{ width: 40 }} /> {/* Empty view for balance */}
+        <View style={{ width: 40 }} />
       </View>
 
       <KeyboardAvoidingView
@@ -76,19 +86,18 @@ const FlashcardCreator = () => {
         style={styles.keyboardAvoid}
       >
         <ScrollView style={styles.scrollView}>
-          {/* Title Section */}
+          {/* Title & Description */}
           <View style={styles.titleSection}>
             <Text style={styles.sectionLabel}>TITLE</Text>
             <TextInput
               style={styles.titleInput}
-              placeholder="Enter a title, like 'Biology 101' or 'Spanish Vocabulary'"
+              placeholder="Enter a title"
               placeholderTextColor="#888"
               value={title}
               onChangeText={setTitle}
             />
           </View>
 
-          {/* Description Section */}
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionLabel}>DESCRIPTION</Text>
             <TextInput
@@ -101,7 +110,7 @@ const FlashcardCreator = () => {
             />
           </View>
 
-          {/* Cards Count and Buttons */}
+          {/* Cards Header */}
           <View style={styles.cardsHeader}>
             <View style={styles.cardsCount}>
               <Text style={styles.cardsCountText}>{cards.length} Cards</Text>
@@ -109,15 +118,13 @@ const FlashcardCreator = () => {
                 Tab or Enter to move between fields
               </Text>
             </View>
-            <View style={styles.headerButtons}>
-              <TouchableOpacity style={styles.headerButton}>
-                <Icon name="cloud-upload" size={22} color="#fff" />
-                <Text style={styles.headerButtonText}>Import</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.headerButton}>
+              <Icon name="cloud-upload" size={22} color="#fff" />
+              <Text style={styles.headerButtonText}>Import</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Cards */}
+          {/* Cards List */}
           {cards.map((card, index) => (
             <View key={card.id} style={styles.cardItem}>
               <View style={styles.cardNumberContainer}>
@@ -140,6 +147,28 @@ const FlashcardCreator = () => {
                     updateCard(card.id, "definition", text)
                   }
                 />
+                {/* Importance Selector */}
+                <View style={styles.importanceContainer}>
+                  {["low", "medium", "high"].map((level) => (
+                    <TouchableOpacity
+                      key={level}
+                      style={[
+                        styles.importanceButton,
+                        card.importance === level && styles[`${level}Active`],
+                      ]}
+                      onPress={() => updateImportance(card.id, level)}
+                    >
+                      <Text
+                        style={[
+                          styles.importanceText,
+                          card.importance === level && styles[`${level}Text`],
+                        ]}
+                      >
+                        {level.charAt(0).toUpperCase() + level.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
               <TouchableOpacity
                 style={styles.deleteButton}
@@ -159,7 +188,7 @@ const FlashcardCreator = () => {
           <View style={styles.bottomPadding} />
         </ScrollView>
 
-        {/* Save Button (Fixed at bottom) */}
+        {/* Save Button */}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
@@ -249,9 +278,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
-  headerButtons: {
-    flexDirection: "row",
-  },
   headerButton: {
     backgroundColor: "#5f8aff",
     flexDirection: "row",
@@ -259,7 +285,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
-    marginLeft: 10,
   },
   headerButtonText: {
     color: "#fff",
@@ -303,6 +328,48 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: "#EEEEEE",
+  },
+  importanceContainer: {
+    flexDirection: "row",
+    marginTop: 8,
+    justifyContent: "space-between",
+  },
+  importanceButton: {
+    flex: 1,
+    padding: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    marginHorizontal: 2,
+    alignItems: "center",
+  },
+  importanceText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  lowActive: {
+    backgroundColor: "#e8f5e9",
+    borderColor: "#4CAF50",
+  },
+  mediumActive: {
+    backgroundColor: "#fffde7",
+    borderColor: "#FFC107",
+  },
+  highActive: {
+    backgroundColor: "#ffebee",
+    borderColor: "#F44336",
+  },
+  lowText: {
+    color: "#4CAF50",
+    fontWeight: "bold",
+  },
+  mediumText: {
+    color: "#FFC107",
+    fontWeight: "bold",
+  },
+  highText: {
+    color: "#F44336",
+    fontWeight: "bold",
   },
   deleteButton: {
     padding: 2,
