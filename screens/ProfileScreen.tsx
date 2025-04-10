@@ -15,8 +15,10 @@ import LogoutIcon from "../svg/LogoutIcon";
 import NotificationIcon from "../svg/NotificationIcon";
 import HeartIcon from "../svg/HeartIcon";
 import SelectButton from "../Components/ProfileScreenComponents/SelectButton";
+import { useNavigation } from "@react-navigation/native";
 
 const ProfileScreen = () => {
+  const navigation = useNavigation();
   return (
     <SafeAreaView>
       <ScrollView
@@ -73,11 +75,12 @@ const ProfileScreen = () => {
         </View>
         <TouchableOpacity
           onPress={() => {
-            console.log("Log Out");
+            navigation.navigate("Login");
           }}
           style={styles.logoutSection}
         >
           <LogoutIcon />
+
           <Text style={styles.logout}>Log Out</Text>
         </TouchableOpacity>
       </ScrollView>

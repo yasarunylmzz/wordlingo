@@ -8,22 +8,13 @@ import {
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Divider } from "react-native-paper";
-import MessageIcon from "../../svg/MessageIcon";
-import IconLocks from "../../svg/IconLocks";
-import EyeHide from "../../svg/EyeHide";
-import EyeShow from "../../svg/EyeShow";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../RootStackParams";
-import axios from "axios";
 import AlternativLogin from "./Components/AlternativLogin";
 import BottomContent from "./Components/BottomContent";
 import InputSection from "./Components/InputSection";
 
 const LoginScreen = () => {
-  type NavigationType = NavigationProp<RootStackParamList, "Login">;
-  const navigation = useNavigation<NavigationType>();
-  const [userData, setUserData] = useState({ email: "", password: "" });
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <Text style={styles.loginText}>Login</Text>
