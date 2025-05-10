@@ -170,6 +170,7 @@ const CardDecks: React.FC = () => {
                 ]}
                 disabled={!newCardWord1 || !newCardWord2}
                 onPress={handleAddCard}
+                x
               >
                 <Text style={modalStyles.saveButtonText}>Add Card</Text>
               </TouchableOpacity>

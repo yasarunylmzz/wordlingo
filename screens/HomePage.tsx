@@ -15,12 +15,15 @@ import NotificationIcon from "../svg/NotificationIcon";
 import ChartComponent from "../Components/HomePageComponents/ChartComponent";
 import OverviewComponent from "../Components/HomePageComponents/OverviewComponent";
 import TodoComponents from "../Components/HomePageComponents/TodoComponents";
+import { useAuthStore } from "../stores/userStore";
 
 const HomePage = () => {
   type NavigationType = NavigationProp<RootStackParamList>;
   const navigation = useNavigation<NavigationType>();
   const screenWidth = Dimensions.get("window").width;
   const screenHeight = Dimensions.get("window").height;
+
+  const name = useAuthStore((state) => state.user.name?.toUpperCase());
 
   const data = [
     { value: 50 },
@@ -37,7 +40,7 @@ const HomePage = () => {
     <SafeAreaView>
       <View style={styles.userContainer}>
         <View style={styles.topTextcontainer}>
-          <Text style={styles.hiText}>Hi, Steven</Text>
+          <Text style={styles.hiText}>Hi, {name}</Text>
           <Text style={styles.hiText2}>Let's make this day learn</Text>
         </View>
         <View style={styles.rightSection}>

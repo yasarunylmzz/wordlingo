@@ -1,34 +1,69 @@
-import { useNavigation } from "@react-navigation/native";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
-  TouchableOpacity,
   Keyboard,
+  Alert,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { useNavigation } from "@react-navigation/native";
+import { verification } from "../services/userService";
+import { useAuthStore } from "../stores/userStore";
+
+const CODE_LENGTH = 6; // tek yerde tanımla
 
 const TwoFactorAuth = () => {
-  const [code, setCode] = useState<string[]>(new Array(6).fill(""));
-  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
-  const inputs = useRef<Array<TextInput | null>>([]);
-  const Navigator = useNavigation();
+  const navigation = useNavigation();
+  const userID = useAuthStore((s) => s.user.id);
+  const userEmail = useAuthStore((s) => s.user.email);
 
+  const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
+  const [isSubmitting, setIsSubmitting] = useState(false); // tekrar çağrıyı engelle
+  const inputs = useRef<Array<TextInput | null>>([]);
+
+  /* ===== kod değişince otomatik kontrol ===== */
+  useEffect(() => {
+    const filled = code.every((c) => c !== "");
+    if (filled && !isSubmitting) {
+      Keyboard.dismiss();
+      verifyCode(code.join(""));
+    }
+  }, [code]);
+
+  /* ===== backend çağrısı ===== */
+  const verifyCode = async (finalCode: string) => {
+    setIsSubmitting(true);
+    try {
+      const res = await verification(userID ?? "", userEmail!, finalCode);
+      if (res?.status === 202) {
+        navigation.navigate("BottomScreen" as never);
+      } else {
+        Alert.alert("Hata", "Kod doğrulanamadı. Tekrar deneyin.");
+        resetInputs();
+      }
+    } catch (e: any) {
+      console.log("Hata:", e);
+      Alert.alert("Hata", e?.message ?? "Bilinmeyen bir hata oluştu.");
+      resetInputs();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetInputs = () => {
+    setCode(Array(CODE_LENGTH).fill(""));
+    inputs.current[0]?.focus();
+  };
+
+  /* ===== input kontrolleri ===== */
   const handleChange = (text: string, index: number) => {
     const newCode = [...code];
-    newCode[index] = text;
+    newCode[index] = text.replace(/[^0-9]/g, ""); // sadece rakam
     setCode(newCode);
 
-    if (text && index < 5) {
-      inputs.current[index + 1]?.focus();
-    }
-
-    if (newCode.every((num) => num !== "")) {
-      Keyboard.dismiss();
-      Navigator.navigate("BottomScreen"); // Navigate to the Home screen when all inputs are filled
-    }
+    if (text && index < CODE_LENGTH - 1) inputs.current[index + 1]?.focus();
   };
 
   const handleKeyPress = (e: any, index: number) => {
@@ -37,14 +72,7 @@ const TwoFactorAuth = () => {
     }
   };
 
-  const handleConfirm = () => {
-    if (code.join("").length === 4) {
-      // Doğrulama işlemi
-    } else {
-      // Hata durumu
-    }
-  };
-
+  /* ======== UI ======== */
   return (
     <View style={styles.container}>
       <View style={styles.halfCircleContainer}>
@@ -57,27 +85,25 @@ const TwoFactorAuth = () => {
           <Path d="M 0 50 A 50 50 0 0 1 100 50" fill="#5B67CA" />
         </Svg>
       </View>
+
       <View style={styles.contentContainer}>
         <View style={styles.textContainer}>
           <Text style={styles.title}>Hey,</Text>
           <Text style={styles.title}>Login Now.</Text>
         </View>
+
         <View style={styles.codeContainer}>
-          {code.map((value, index) => (
+          {code.map((val, idx) => (
             <TextInput
-              key={index}
-              style={[
-                styles.input,
-                focusedIndex === index && { backgroundColor: "#D1C4E9" },
-              ]}
-              value={value}
-              onChangeText={(text) => handleChange(text, index)}
-              keyboardType="numeric"
+              key={idx}
+              ref={(ref) => (inputs.current[idx] = ref)}
+              style={styles.input}
+              keyboardType="number-pad"
               maxLength={1}
-              ref={(ref) => (inputs.current[index] = ref)}
-              onKeyPress={(e) => handleKeyPress(e, index)}
-              onFocus={() => setFocusedIndex(index)}
-              onBlur={() => setFocusedIndex(null)}
+              value={val}
+              onChangeText={(t) => handleChange(t, idx)}
+              onKeyPress={(e) => handleKeyPress(e, idx)}
+              autoFocus={idx === 0}
             />
           ))}
         </View>
@@ -86,6 +112,7 @@ const TwoFactorAuth = () => {
   );
 };
 
+/* ========= Styles ========= */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -101,31 +128,14 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 50,
   },
-  halfCircle: {
-    transform: [{ rotate: "90deg" }],
-  },
+  halfCircle: { transform: [{ rotate: "90deg" }] },
   contentContainer: {
     alignItems: "center",
     justifyContent: "center",
     width: "90%",
   },
-  textContainer: {
-    width: "100%",
-    marginBottom: 20,
-    alignItems: "flex-start",
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#333",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#888",
-    marginBottom: 40,
-    textAlign: "center",
-  },
+  textContainer: { width: "100%", marginBottom: 20, alignItems: "flex-start" },
+  title: { fontSize: 32, fontWeight: "bold", color: "#333" },
   codeContainer: {
     flexDirection: "row",
     justifyContent: "space-between",

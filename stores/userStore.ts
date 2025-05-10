@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { Auth, User } from "../types/user";
 import { persist, StorageValue } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import { jwtDecode, JwtPayload } from "jwt-decode";
 
 type AuthState = {
   user: Partial<User>;
@@ -35,10 +35,10 @@ export const useAuthStore = create<AuthState>()(
         const now = Math.floor(Date.now() / 1000);
 
         try {
-          const decodedAccessToken = jwt.verify(
+          const decodedAccessToken = jwtDecode<JwtPayload>(
             this.auth.accessToken || "",
             process.env.JWT_SECRET || "dev_secret"
-          ) as JwtPayload;
+          );
 
           if (decodedAccessToken.exp && decodedAccessToken.exp < now) {
             console.warn("Access token süresi dolmuş");
@@ -53,10 +53,10 @@ export const useAuthStore = create<AuthState>()(
 
             // 🌀 Access token expired, refresh token kontrolü
             try {
-              const decodedRefreshToken = jwt.verify(
+              const decodedRefreshToken = jwtDecode<JwtPayload>(
                 this.auth.refreshToken || "",
                 process.env.JWT_SECRET || "dev_secret"
-              ) as JwtPayload;
+              );
 
               if (decodedRefreshToken.exp && decodedRefreshToken.exp < now) {
                 console.warn("Refresh token süresi de dolmuş");

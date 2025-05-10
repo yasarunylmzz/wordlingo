@@ -13,6 +13,7 @@ import {
   Alert,
 } from "react-native";
 import LeftArrow from "../svg/LeftArrow";
+import { useAuthStore } from "../stores/userStore";
 
 const InputField = ({
   label,
@@ -21,6 +22,13 @@ const InputField = ({
   onChangeText,
   keyboardType = "default",
   isRequired = false,
+}: {
+  label: string;
+  value: string;
+  editable: boolean;
+  onChangeText: (text: string) => void;
+  keyboardType?: "default" | "email-address" | "phone-pad";
+  isRequired?: boolean;
 }) => (
   <View style={styles.inputContainer}>
     <View style={styles.labelContainer}>
@@ -41,23 +49,13 @@ const InputField = ({
   </View>
 );
 
-const MyAccount = ({ navigation }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [userData, setUserData] = useState({
-    username: "yasarunyilmz",
-    firstName: "Yaşar",
-    lastName: "Ünyılmaz",
-    email: "yasar@example.com",
-    phone: "123-456-7890",
-    address: "İstanbul, Türkiye",
-  });
+const MyAccount = ({ navigation }: any) => {
+  const username = useAuthStore((state) => state.user.username);
+  const name = useAuthStore((state) => state.user.name);
+  const surname = useAuthStore((state) => state.user.surname);
+  const email = useAuthStore((state) => state.user.email);
 
-  const handleInputChange = (key, value) => {
-    setUserData((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+  const [isEditing, setIsEditing] = useState(false);
 
   const toggleEdit = () => {
     if (isEditing) {
@@ -120,7 +118,7 @@ const MyAccount = ({ navigation }) => {
                 </TouchableOpacity>
               )}
             </View>
-            <Text style={styles.username}>@{userData.username}</Text>
+            <Text style={styles.username}>@{username}</Text>
           </View>
 
           {/* User Information Card */}
@@ -128,43 +126,40 @@ const MyAccount = ({ navigation }) => {
             <Text style={styles.sectionTitle}>Personal Information</Text>
 
             <InputField
-              label="First Name"
-              value={userData.firstName}
+              label="Username"
+              value={username}
               editable={isEditing}
-              onChangeText={(text) => handleInputChange("firstName", text)}
+              onChangeText={(text: string) => handleInputChange("phone", text)}
+              keyboardType="phone-pad"
+            />
+
+            <InputField
+              label="First Name"
+              value={name}
+              editable={isEditing}
+              onChangeText={(text: string) =>
+                handleInputChange("firstName", text)
+              }
               isRequired={true}
             />
 
             <InputField
               label="Last Name"
-              value={userData.lastName}
+              value={surname}
               editable={isEditing}
-              onChangeText={(text) => handleInputChange("lastName", text)}
+              onChangeText={(text: string) =>
+                handleInputChange("lastName", text)
+              }
               isRequired={true}
             />
 
             <InputField
               label="Email Address"
-              value={userData.email}
+              value={email}
               editable={isEditing}
-              onChangeText={(text) => handleInputChange("email", text)}
+              onChangeText={(text: string) => handleInputChange("email", text)}
               keyboardType="email-address"
               isRequired={true}
-            />
-
-            <InputField
-              label="Phone Number"
-              value={userData.phone}
-              editable={isEditing}
-              onChangeText={(text) => handleInputChange("phone", text)}
-              keyboardType="phone-pad"
-            />
-
-            <InputField
-              label="Address"
-              value={userData.address}
-              editable={isEditing}
-              onChangeText={(text) => handleInputChange("address", text)}
             />
           </View>
 

@@ -16,8 +16,20 @@ import NotificationIcon from "../svg/NotificationIcon";
 import HeartIcon from "../svg/HeartIcon";
 import SelectButton from "../Components/ProfileScreenComponents/SelectButton";
 import { useNavigation } from "@react-navigation/native";
+import { useAuthStore } from "../stores/userStore";
 
 const ProfileScreen = () => {
+  const username = useAuthStore((state) => state.user.username);
+  const name = useAuthStore((state) => state.user.name);
+  const surname = useAuthStore((state) => state.user.surname);
+
+  const logOut = useAuthStore().logOut;
+
+  function capitalize(str: string): string {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
   const navigation = useNavigation();
   return (
     <SafeAreaView>
@@ -32,8 +44,10 @@ const ProfileScreen = () => {
               <View style={styles.profile}>
                 <Avatar />
                 <View style={styles.textProfileSection}>
-                  <Text style={styles.name}>Yaşar Ünyılmaz</Text>
-                  <Text style={styles.username}>@yasarunyilmz</Text>
+                  <Text style={styles.name}>
+                    {capitalize(name!)} {capitalize(surname!)}
+                  </Text>
+                  <Text style={styles.username}>@{username}</Text>
                 </View>
               </View>
             </View>
@@ -75,6 +89,10 @@ const ProfileScreen = () => {
         </View>
         <TouchableOpacity
           onPress={() => {
+            logOut();
+            // Clear the auth data from the store
+            useAuthStore.getState().clearAuthData();
+            // Navigate to the login screen
             navigation.navigate("Login");
           }}
           style={styles.logoutSection}

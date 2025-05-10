@@ -1,15 +1,8 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  TextInput,
-} from "react-native";
-import React, { useState } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Divider } from "react-native-paper";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "../RootStackParams";
+
 import AlternativLogin from "./Components/AlternativLogin";
 import BottomContent from "./Components/BottomContent";
 import InputSection from "./Components/InputSection";

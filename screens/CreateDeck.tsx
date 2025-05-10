@@ -13,59 +13,32 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useAuthStore } from "../stores/userStore";
+import { createDesk } from "../services/deskService";
 
-const FlashcardCreator = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [cards, setCards] = useState([
-    { id: 1, term: "", definition: "", importance: "medium" },
-    { id: 2, term: "", definition: "", importance: "medium" },
-  ]);
+const CreateDeck: React.FC = () => {
+  const [title, setTitle] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
   const navigation = useNavigation();
+  const userId = useAuthStore((state) => state.user.id);
 
-  const handleGoBack = () => {
+  const handleGoBack = (): void => {
     navigation.goBack();
   };
-
-  const handleSave = () => {
+  const handleCreateDeck = async (): Promise<void> => {
     if (title.trim() === "") {
-      alert("Title cannot be empty");
+      alert("Başlık boş olamaz");
       return;
     }
-    // Save logic here
-    console.log("Saved cards:", { title, description, cards });
-    alert(`Saved: ${title}`);
-  };
 
-  const updateCard = (id, field, value) => {
-    const updatedCards = cards.map((card) =>
-      card.id === id ? { ...card, [field]: value } : card
-    );
-    setCards(updatedCards);
-  };
-
-  const updateImportance = (id, level) => {
-    const updatedCards = cards.map((card) =>
-      card.id === id ? { ...card, importance: level } : card
-    );
-    setCards(updatedCards);
-  };
-
-  const addCard = () => {
-    const newId =
-      cards.length > 0 ? Math.max(...cards.map((c) => c.id)) + 1 : 1;
-    setCards([
-      ...cards,
-      { id: newId, term: "", definition: "", importance: "medium" },
-    ]);
-  };
-
-  const removeCard = (id) => {
-    if (cards.length <= 2) {
-      alert("You need at least 2 cards");
-      return;
+    try {
+      const response = await createDesk(title, description, userId!, null);
+      console.log(response);
+      navigation.navigate("CreateCard");
+    } catch (error: any) {
+      console.error("Deck oluşturulamadı:", error.message);
+      alert("Bir hata oluştu, lütfen tekrar deneyin.");
     }
-    setCards(cards.filter((card) => card.id !== id));
   };
 
   return (
@@ -77,7 +50,7 @@ const FlashcardCreator = () => {
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Flashcards</Text>
+        <Text style={styles.headerTitle}>Yeni Kart Destesi Oluştur</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -88,10 +61,10 @@ const FlashcardCreator = () => {
         <ScrollView style={styles.scrollView}>
           {/* Title & Description */}
           <View style={styles.titleSection}>
-            <Text style={styles.sectionLabel}>TITLE</Text>
+            <Text style={styles.sectionLabel}>BAŞLIK</Text>
             <TextInput
               style={styles.titleInput}
-              placeholder="Enter a title"
+              placeholder="Kart destesi başlığı"
               placeholderTextColor="#888"
               value={title}
               onChangeText={setTitle}
@@ -99,10 +72,10 @@ const FlashcardCreator = () => {
           </View>
 
           <View style={styles.descriptionSection}>
-            <Text style={styles.sectionLabel}>DESCRIPTION</Text>
+            <Text style={styles.sectionLabel}>AÇIKLAMA</Text>
             <TextInput
               style={styles.descriptionInput}
-              placeholder="Add a description..."
+              placeholder="Kart destesi için açıklama ekleyin..."
               placeholderTextColor="#888"
               multiline
               value={description}
@@ -110,87 +83,24 @@ const FlashcardCreator = () => {
             />
           </View>
 
-          {/* Cards Header */}
-          <View style={styles.cardsHeader}>
-            <View style={styles.cardsCount}>
-              <Text style={styles.cardsCountText}>{cards.length} Cards</Text>
-              <Text style={styles.cardsHint}>
-                Tab or Enter to move between fields
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.headerButton}>
-              <Icon name="cloud-upload" size={22} color="#fff" />
-              <Text style={styles.headerButtonText}>Import</Text>
-            </TouchableOpacity>
+          {/* Info Section */}
+          <View style={styles.infoSection}>
+            <Icon name="info-outline" size={24} color="#5f8aff" />
+            <Text style={styles.infoText}>
+              Kart destesi oluşturduktan sonra, içine kartlar eklemeye
+              başlayabilirsiniz.
+            </Text>
           </View>
-
-          {/* Cards List */}
-          {cards.map((card, index) => (
-            <View key={card.id} style={styles.cardItem}>
-              <View style={styles.cardNumberContainer}>
-                <Text style={styles.cardNumber}>{index + 1}</Text>
-              </View>
-              <View style={styles.cardInputContainer}>
-                <TextInput
-                  style={styles.cardTermInput}
-                  placeholder="Enter term"
-                  placeholderTextColor="#888"
-                  value={card.term}
-                  onChangeText={(text) => updateCard(card.id, "term", text)}
-                />
-                <TextInput
-                  style={styles.cardDefinitionInput}
-                  placeholder="Enter definition"
-                  placeholderTextColor="#888"
-                  value={card.definition}
-                  onChangeText={(text) =>
-                    updateCard(card.id, "definition", text)
-                  }
-                />
-                {/* Importance Selector */}
-                <View style={styles.importanceContainer}>
-                  {["low", "medium", "high"].map((level) => (
-                    <TouchableOpacity
-                      key={level}
-                      style={[
-                        styles.importanceButton,
-                        card.importance === level && styles[`${level}Active`],
-                      ]}
-                      onPress={() => updateImportance(card.id, level)}
-                    >
-                      <Text
-                        style={[
-                          styles.importanceText,
-                          card.importance === level && styles[`${level}Text`],
-                        ]}
-                      >
-                        {level.charAt(0).toUpperCase() + level.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() => removeCard(card.id)}
-              >
-                <Icon name="delete-outline" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-          ))}
-
-          {/* Add Card Button */}
-          <TouchableOpacity style={styles.addCardButton} onPress={addCard}>
-            <Icon name="add" size={24} color="#5f8aff" />
-            <Text style={styles.addCardText}>Add card</Text>
-          </TouchableOpacity>
 
           <View style={styles.bottomPadding} />
         </ScrollView>
 
-        {/* Save Button */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save</Text>
+        {/* Create Deck Button */}
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={handleCreateDeck}
+        >
+          <Text style={styles.createButtonText}>Kart Destesi Oluştur</Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -259,138 +169,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EEEEEE",
   },
-  cardsHeader: {
+  infoSection: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  cardsCount: {
-    flex: 1,
-  },
-  cardsCountText: {
-    color: "#333",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  cardsHint: {
-    color: "#888",
-    fontSize: 13,
-    marginTop: 4,
-  },
-  headerButton: {
-    backgroundColor: "#5f8aff",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    backgroundColor: "#e3f2fd",
     borderRadius: 8,
+    padding: 15,
+    marginTop: 20,
+    marginBottom: 30,
+    alignItems: "center",
   },
-  headerButtonText: {
-    color: "#fff",
-    marginLeft: 5,
+  infoText: {
+    color: "#333",
     fontSize: 14,
-  },
-  cardItem: {
-    flexDirection: "row",
-    marginBottom: 15,
-    alignItems: "center",
-  },
-  cardNumberContainer: {
-    width: 15,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cardNumber: {
-    color: "#5f8aff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  cardInputContainer: {
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  cardTermInput: {
-    backgroundColor: "#f5f5f5",
-    color: "#333",
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#EEEEEE",
-  },
-  cardDefinitionInput: {
-    backgroundColor: "#f5f5f5",
-    color: "#333",
-    borderRadius: 8,
-    padding: 15,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#EEEEEE",
-  },
-  importanceContainer: {
-    flexDirection: "row",
-    marginTop: 8,
-    justifyContent: "space-between",
-  },
-  importanceButton: {
-    flex: 1,
-    padding: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    marginHorizontal: 2,
-    alignItems: "center",
-  },
-  importanceText: {
-    fontSize: 12,
-    color: "#666",
-  },
-  lowActive: {
-    backgroundColor: "#e8f5e9",
-    borderColor: "#4CAF50",
-  },
-  mediumActive: {
-    backgroundColor: "#fffde7",
-    borderColor: "#FFC107",
-  },
-  highActive: {
-    backgroundColor: "#ffebee",
-    borderColor: "#F44336",
-  },
-  lowText: {
-    color: "#4CAF50",
-    fontWeight: "bold",
-  },
-  mediumText: {
-    color: "#FFC107",
-    fontWeight: "bold",
-  },
-  highText: {
-    color: "#F44336",
-    fontWeight: "bold",
-  },
-  deleteButton: {
-    padding: 2,
-  },
-  addCardButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderStyle: "dashed",
-    borderRadius: 8,
-    padding: 15,
-    marginVertical: 20,
-  },
-  addCardText: {
-    color: "#5f8aff",
-    fontSize: 16,
     marginLeft: 10,
+    flex: 1,
   },
-  saveButton: {
+  createButton: {
     backgroundColor: "#5f8aff",
     padding: 15,
     borderRadius: 8,
@@ -401,7 +195,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  saveButtonText: {
+  createButtonText: {
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
@@ -411,4 +205,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FlashcardCreator;
+export default CreateDeck;

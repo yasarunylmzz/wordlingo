@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Image, StyleSheet, Text } from "react-native";
-import Frame from "../svg/Frame";
 
 export default function SplashScreen() {
   return (
@@ -8,7 +7,6 @@ export default function SplashScreen() {
       <View style={styles.circle3}>
         <View style={styles.circle2}>
           <View style={styles.circle1}>
-            <Frame />
             <View style={styles.bottom}>
               <Text style={styles.text}>Word-Lingo</Text>
               <View style={styles.dot}></View>

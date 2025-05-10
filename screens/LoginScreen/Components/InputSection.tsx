@@ -4,6 +4,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Alert,
 } from "react-native";
 import React from "react";
 import MessageIcon from "../../../svg/MessageIcon";
@@ -13,23 +14,81 @@ import EyeShow from "../../../svg/EyeShow";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../RootStackParams";
 import { loginUser } from "../../../services/userService";
+import { useAuthStore } from "../../../stores/userStore";
 
 const InputSection = () => {
   type NavigationType = NavigationProp<RootStackParamList, "Login">;
   const [hidePassword, setHidePassword] = React.useState(false);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
   const navigation = useNavigation<NavigationType>();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const isValidEmail = emailRegex.test(email);
 
   const postData = async (email: string, password: string) => {
-    const response = await loginUser(email, password);
-    console.log("Response:", response.data);
-    if (response.status === 200) {
-      console.log("response-status:", response.status);
-      console.log("response-data:", response.headers);
-      navigation.navigate("BottomScreen");
+    if (!email || !password) {
+      Alert.alert("Hata", "Email ve şifre alanları boş olamaz");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await loginUser(email, password);
+      console.log("Response:", response.data);
+
+      useAuthStore.getState().setAuthData({
+        user: {
+          id: response.data.user.id,
+          name: response.data.user.name,
+          surname: response.data.user.surname,
+          username: response.data.user.username,
+          email: response.data.user.email,
+        },
+        auth: {
+          accessToken: response.headers.access_token,
+          refreshToken: response.headers.refresh_token,
+        },
+      });
+
+      if (response.status === 200) {
+        console.log("response-status:", response.status);
+        console.log("response-data:", response.headers);
+        navigation.navigate("BottomScreen");
+      } else if (response.status === 203) {
+        navigation.navigate("TwoFactorAuth");
+      }
+    } catch (error: any) {
+      console.error("Login error:", error);
+
+      if (error.code === "ECONNABORTED") {
+        // Timeout hatası
+        Alert.alert(
+          "Bağlantı Hatası",
+          "Sunucuya bağlanırken zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edip tekrar deneyin."
+        );
+      } else if (error.response) {
+        // Sunucu yanıtı ile gelen hatalar
+        Alert.alert(
+          "Giriş Başarısız",
+          error.response.data?.message || "Giriş bilgilerinizi kontrol edin"
+        );
+      } else if (error.request) {
+        // İstek yapıldı ancak yanıt alınamadı
+        Alert.alert(
+          "Sunucu Hatası",
+          "Sunucuya ulaşılamıyor. Lütfen daha sonra tekrar deneyin."
+        );
+      } else {
+        // Diğer hatalar
+        Alert.alert(
+          "Giriş Başarısız",
+          "Bir hata oluştu, lütfen tekrar deneyin."
+        );
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,6 +104,8 @@ const InputSection = () => {
             placeholderTextColor="#9AA3BC"
             value={email}
             onChangeText={(text) => setEmail(text)}
+            autoCapitalize="none"
+            keyboardType="email-address"
           />
         </View>
       </View>
@@ -60,6 +121,7 @@ const InputSection = () => {
             secureTextEntry={!hidePassword}
             value={password}
             onChangeText={(text) => setPassword(text)}
+            autoCapitalize="none"
           />
           <TouchableOpacity onPress={() => setHidePassword(!hidePassword)}>
             {hidePassword ? (
@@ -76,10 +138,13 @@ const InputSection = () => {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.login}
-        onPress={() => postData(email, password)}
+        style={[styles.login, loading && styles.loginDisabled]}
+        onPress={() => !loading && postData(email, password)}
+        disabled={loading}
       >
-        <Text style={styles.buttonText}>Log In</Text>
+        <Text style={styles.buttonText}>
+          {loading ? "Giriş Yapılıyor..." : "Log In"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -140,6 +205,9 @@ const styles = StyleSheet.create({
     padding: 15,
     alignItems: "center",
     borderRadius: 14,
+  },
+  loginDisabled: {
+    backgroundColor: "#9AA3BC",
   },
   buttonText: {
     color: "#fff",

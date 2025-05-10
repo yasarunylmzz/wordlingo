@@ -39,10 +39,11 @@ export async function createUser(
   }
 }
 
-export async function verification(user_id: string, verification_code: string) {
+export async function verification(id: string, email: string, code: string) {
   const data = {
-    user_id: user_id,
-    verification_code: verification_code,
+    id: id,
+    email: email,
+    code: code,
   };
   try {
     const response = axios.post("https://api.wordlingo.me/verification", data);
