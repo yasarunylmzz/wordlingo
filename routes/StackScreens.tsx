@@ -121,8 +121,6 @@ function StackScreens() {
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="SignIn" component={SignInScreen} />
       <Stack.Screen name="FirstScreen" component={HomePage} />
-      <Stack.Screen name="SelectionScreen1" component={SelectionScreen1} />
-      <Stack.Screen name="SelectionScreen2" component={SelectionScreen2} />
       <Stack.Screen name="TwoFactorAuth" component={TwoFactorAuth} />
     </Stack.Navigator>
   );

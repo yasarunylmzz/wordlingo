@@ -99,6 +99,7 @@ const InputSection = () => {
         <View style={styles.inputField}>
           <MessageIcon width={20} height={20} style={styles.fieldIcon} />
           <TextInput
+            testID="email-input"
             style={styles.input}
             placeholder="Email ID or Username"
             placeholderTextColor="#9AA3BC"
@@ -115,6 +116,7 @@ const InputSection = () => {
         <View style={styles.inputField}>
           <IconLocks width={20} height={20} style={styles.fieldIcon} />
           <TextInput
+            testID="password-input"
             style={styles.input}
             placeholder="Password"
             placeholderTextColor="#9AA3BC"
@@ -138,6 +140,7 @@ const InputSection = () => {
       </TouchableOpacity>
 
       <TouchableOpacity
+        testID="login-button"
         style={[styles.login, loading && styles.loginDisabled]}
         onPress={() => !loading && postData(email, password)}
         disabled={loading}

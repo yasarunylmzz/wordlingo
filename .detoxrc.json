@@ -1,0 +1,21 @@
+{
+  "apps": {
+    "wordLingo.ios": {
+      "type": "ios.app",
+      "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/wordLingo.app"
+    }
+  },
+  "devices": {
+    "simulator": {
+      "type": "ios.simulator",
+      "device": "iPhone 16"
+    }
+  },
+  "configurations": {
+    "ios.sim.debug": {
+      "device": "simulator",
+      "app": "wordLingo.ios",
+      "build": "xcodebuild -workspace ios/wordLingo.xcworkspace -scheme wordLingo -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build"
+    }
+  }
+}

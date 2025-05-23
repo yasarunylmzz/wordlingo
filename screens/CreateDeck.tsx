@@ -14,30 +14,50 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAuthStore } from "../stores/userStore";
-import { createDesk } from "../services/deskService";
+import { createDesk } from "../services/deckService";
 
 const CreateDeck: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const navigation = useNavigation();
   const userId = useAuthStore((state) => state.user.id);
+  const refreshToken = useAuthStore((state) => state.auth.refreshToken);
+  const accessToken = useAuthStore((state) => state.auth.accessToken);
 
   const handleGoBack = (): void => {
     navigation.goBack();
   };
-  const handleCreateDeck = async (): Promise<void> => {
+  const handleCreateDeck = async () => {
     if (title.trim() === "") {
       alert("Başlık boş olamaz");
       return;
     }
 
+    if (!userId) {
+      alert("Kullanıcı girişi yapmanız gerekiyor");
+      return;
+    }
+
     try {
-      const response = await createDesk(title, description, userId!, null);
-      console.log(response);
+      const response = await createDesk(
+        title,
+        description,
+        userId,
+        null,
+        refreshToken!,
+        accessToken!
+      );
       navigation.navigate("CreateCard");
     } catch (error: any) {
-      console.error("Deck oluşturulamadı:", error.message);
-      alert("Bir hata oluştu, lütfen tekrar deneyin.");
+      const errorMessage = error.response?.data
+        ? JSON.stringify(error.response.data)
+        : error.message || "Bilinmeyen hata";
+      if (errorMessage.includes("400")) {
+        const accessToken = useAuthStore.setState((state) => state.auth.accessToken);
+      }
+
+      alert(`Hata oluştu: ${errorMessage}`);
+      console.error(error);
     }
   };
 

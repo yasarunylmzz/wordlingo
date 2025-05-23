@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -15,10 +15,34 @@ import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "./RootStackParams";
 import ViewListIcon from "../svg/ViewListIcon";
 import { LinearGradient } from "expo-linear-gradient";
+import { getAllDecks } from "../services/deckService";
+import { useAuthStore } from "../stores/userStore";
 
 const AllDecks = () => {
   type NavigationType = NavigationProp<RootStackParamList>;
   const navigation = useNavigation<NavigationType>();
+  const UserId = useAuthStore((state) => state.user.id);
+  const refreshToken = useAuthStore((state) => state.auth.refreshToken);
+  const accessToken = useAuthStore((state) => state.auth.accessToken);
+  console.log("UserId:", UserId);
+  console.log("refreshToken:", refreshToken);
+  console.log("accessToken:", accessToken);
+  const GetData = async () => {
+    if (UserId && refreshToken && accessToken) {
+      getAllDecks(UserId, refreshToken, accessToken)
+        .then((response) => {
+          console.log("Response:", response.data);
+        })
+        .catch((error) => {
+          console.log("Error:", error);
+        });
+    } else {
+      console.log("UserId, refreshToken, or accessToken is missing.");
+    }
+  };
+  useEffect(() => {
+    GetData();
+  }, []);
 
   // Sample data structure
   const mostUsedDecks = [

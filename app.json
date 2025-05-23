@@ -4,21 +4,13 @@
     "slug": "wordLingo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./svg/Frame.svg",
+    "icon": "./assets/favicon.png",
     "userInterfaceStyle": "light",
-    "reactNative": {
-      "newArchEnabled": true
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yasarunylmzz.wordLingo"
     },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
-    },
+    "android": {},
     "web": {
       "favicon": "./assets/favicon.png"
     },

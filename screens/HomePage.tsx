@@ -37,7 +37,7 @@ const HomePage = () => {
   const dates = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   return (
-    <SafeAreaView>
+    <SafeAreaView testID="home-screen">
       <View style={styles.userContainer}>
         <View style={styles.topTextcontainer}>
           <Text style={styles.hiText}>Hi, {name}</Text>
