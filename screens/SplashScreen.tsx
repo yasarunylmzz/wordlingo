@@ -29,11 +29,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: 310,
     height: 310,
-    borderRadius: 155, // Updated to 155, half of width/height for proper circle shape
+    borderRadius: 200,
     backgroundColor: "#213a",
     justifyContent: "center",
     alignItems: "center",
-    // Shadow properties for iOS
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -41,13 +40,11 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
-    // Shadow property for Android
-    elevation: 8,
   },
   circle2: {
     width: 488,
     height: 488,
-    borderRadius: 244, // Updated to 244, half of width/height for proper circle shape
+    borderRadius: 244,
     backgroundColor: "#1351fc",
     justifyContent: "center",
     alignItems: "center",
@@ -59,17 +56,15 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 8.3,
-    // Shadow property for Android
     elevation: 16,
   },
   circle3: {
     width: 666,
     height: 666,
-    borderRadius: 333, // Updated to 333, half of width/height for proper circle shape
+    borderRadius: 333,
     backgroundColor: "#7a78fc",
     justifyContent: "center",
     alignItems: "center",
-    // Shadow properties for iOS
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -77,7 +72,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 12.3,
-    // Shadow property for Android
     elevation: 24,
   },
   text: {

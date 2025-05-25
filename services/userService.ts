@@ -41,9 +41,9 @@ export async function createUser(
 
 export async function verification(id: string, email: string, code: string) {
   const data = {
-    id: id,
-    email: email,
-    code: code,
+    id: "id",
+    email: "email",
+    code: "code",
   };
   try {
     const response = axios.post("https://api.wordlingo.me/verification", data);

@@ -10,7 +10,7 @@ export type RootStackParamList = {
   SearchScreen: undefined;
   SelectionScreen1: undefined;
   SelectionScreen2: undefined;
-  CardDecks: undefined;
+  CardDecks: { userId: string; title: string };
   MyAccount: undefined;
   SavedBeneficary: undefined;
   FaceId: undefined;
@@ -20,4 +20,5 @@ export type RootStackParamList = {
   NotificationScreen: undefined;
   CreateDeck: undefined;
   CreateCard: { deckId: string; deckTitle: string };
+  Header: undefined;
 };

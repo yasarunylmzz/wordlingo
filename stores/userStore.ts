@@ -36,8 +36,7 @@ export const useAuthStore = create<AuthState>()(
 
         try {
           const decodedAccessToken = jwtDecode<JwtPayload>(
-            this.auth.accessToken || "",
-            process.env.JWT_SECRET || "dev_secret"
+            this.auth.accessToken || ""
           );
 
           if (decodedAccessToken.exp && decodedAccessToken.exp < now) {
@@ -54,8 +53,7 @@ export const useAuthStore = create<AuthState>()(
             // 🌀 Access token expired, refresh token kontrolü
             try {
               const decodedRefreshToken = jwtDecode<JwtPayload>(
-                this.auth.refreshToken || "",
-                process.env.JWT_SECRET || "dev_secret"
+                this.auth.refreshToken || ""
               );
 
               if (decodedRefreshToken.exp && decodedRefreshToken.exp < now) {
@@ -66,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
               console.log(
                 "Access expired ama refresh geçerli, yeni token alınabilir"
               );
-              return true; // Refresh token geçerliyse hâlâ session geçerli olabilir
+              return true;
             } catch (refreshErr: any) {
               console.error("Refresh token geçersiz:", refreshErr.message);
               return false;
@@ -78,6 +76,7 @@ export const useAuthStore = create<AuthState>()(
         }
       },
     }),
+
     {
       name: "auth-storage",
       storage: {

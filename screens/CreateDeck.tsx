@@ -28,18 +28,11 @@ const CreateDeck: React.FC = () => {
     navigation.goBack();
   };
   const handleCreateDeck = async () => {
-    if (title.trim() === "") {
-      alert("Başlık boş olamaz");
-      return;
-    }
-
-    if (!userId) {
-      alert("Kullanıcı girişi yapmanız gerekiyor");
-      return;
-    }
+    if (!title.trim()) return alert("Başlık boş olamaz");
+    if (!userId) return alert("Kullanıcı girişi yapmanız gerekiyor");
 
     try {
-      const response = await createDesk(
+      await createDesk(
         title,
         description,
         userId,
@@ -49,15 +42,8 @@ const CreateDeck: React.FC = () => {
       );
       navigation.navigate("CreateCard");
     } catch (error: any) {
-      const errorMessage = error.response?.data
-        ? JSON.stringify(error.response.data)
-        : error.message || "Bilinmeyen hata";
-      if (errorMessage.includes("400")) {
-        const accessToken = useAuthStore.setState((state) => state.auth.accessToken);
-      }
-
-      alert(`Hata oluştu: ${errorMessage}`);
-      console.error(error);
+      const msg = error.response?.data?.message || "Bilinmeyen hata";
+      alert(`Hata oluştu: ${msg}`);
     }
   };
 

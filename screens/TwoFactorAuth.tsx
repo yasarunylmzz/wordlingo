@@ -23,7 +23,6 @@ const TwoFactorAuth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false); // tekrar çağrıyı engelle
   const inputs = useRef<Array<TextInput | null>>([]);
 
-  /* ===== kod değişince otomatik kontrol ===== */
   useEffect(() => {
     const filled = code.every((c) => c !== "");
     if (filled && !isSubmitting) {
@@ -32,7 +31,6 @@ const TwoFactorAuth = () => {
     }
   }, [code]);
 
-  /* ===== backend çağrısı ===== */
   const verifyCode = async (finalCode: string) => {
     setIsSubmitting(true);
     try {

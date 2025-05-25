@@ -10,12 +10,13 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.yasarunylmzz.wordLingo"
     },
-    "android": {},
+
+    "android": {
+      "package": "com.yasarunylmzz.wordLingo"
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-secure-store"
-    ]
+    "plugins": ["expo-secure-store"]
   }
 }
