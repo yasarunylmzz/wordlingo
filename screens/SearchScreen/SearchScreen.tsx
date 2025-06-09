@@ -9,8 +9,8 @@ import {
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput } from "react-native-paper";
-import { fetchWordDefinition } from "../api/dictionaryAPI";
-import { DictionaryResponse } from "../types/dictionary";
+import { fetchWordDefinition } from "../../api/dictionaryAPI";
+import { DictionaryResponse } from "../../types/dictionary";
 import { Audio } from "expo-av";
 import { MaterialIcons } from "@expo/vector-icons";
 

@@ -8,14 +8,14 @@ import {
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
-import { RootStackParamList } from "./RootStackParams";
+import { RootStackParamList } from "../RootStackParams";
 import { Dimensions } from "react-native";
-import ProfileIcon from "../svg/ProfileIcon";
-import NotificationIcon from "../svg/NotificationIcon";
-import ChartComponent from "../Components/HomePageComponents/ChartComponent";
-import OverviewComponent from "../Components/HomePageComponents/OverviewComponent";
-import TodoComponents from "../Components/HomePageComponents/TodoComponents";
-import { useAuthStore } from "../stores/userStore";
+import ProfileIcon from "../../svg/ProfileIcon";
+import NotificationIcon from "../../svg/NotificationIcon";
+import ChartComponent from "../../Components/HomePageComponents/ChartComponent";
+import OverviewComponent from "../../Components/HomePageComponents/OverviewComponent";
+import TodoComponents from "../../Components/HomePageComponents/TodoComponents";
+import { useAuthStore } from "../../stores/userStore";
 
 const HomePage = () => {
   type NavigationType = NavigationProp<RootStackParamList>;

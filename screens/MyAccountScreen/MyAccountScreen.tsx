@@ -12,8 +12,8 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import LeftArrow from "../svg/LeftArrow";
-import { useAuthStore } from "../stores/userStore";
+import LeftArrow from "../../svg/LeftArrow";
+import { useAuthStore } from "../../stores/userStore";
 
 const InputField = ({
   label,

@@ -13,16 +13,15 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { useAuthStore } from "../stores/userStore";
-import { createDesk } from "../services/deckService";
+import { useAuthStore } from "../../stores/userStore";
+import { createDesk } from "../../services/deckService";
+import { useDeskStore } from "../../stores/deckStore";
 
 const CreateDeck: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const navigation = useNavigation();
   const userId = useAuthStore((state) => state.user.id);
-  const refreshToken = useAuthStore((state) => state.auth.refreshToken);
-  const accessToken = useAuthStore((state) => state.auth.accessToken);
 
   const handleGoBack = (): void => {
     navigation.goBack();
@@ -32,15 +31,10 @@ const CreateDeck: React.FC = () => {
     if (!userId) return alert("Kullanıcı girişi yapmanız gerekiyor");
 
     try {
-      await createDesk(
-        title,
-        description,
-        userId,
-        null,
-        refreshToken!,
-        accessToken!
-      );
-      navigation.navigate("CreateCard");
+      await createDesk(title, description, userId, null);
+      navigation.navigate("CreateCard", {
+        deckId: useDeskStore.getState().desk.id,
+      });
     } catch (error: any) {
       const msg = error.response?.data?.message || "Bilinmeyen hata";
       alert(`Hata oluştu: ${msg}`);

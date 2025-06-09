@@ -1,8 +1,8 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { View, StyleSheet, Dimensions } from "react-native";
-import SearchScreen from "../screens/SearchScreen";
-import ProfileScreen from "../screens/ProfileScreen";
-import HomePage from "../screens/HomePage";
+import SearchScreen from "../screens/SearchScreen/SearchScreen";
+import ProfileScreen from "../screens/ProfileScreen/ProfileScreen";
+import HomePage from "../screens/HomeScreen/HomeScreen";
 import ProfileIcon from "../svg/ProfileIcon";
 import GridIcon from "../svg/GridIcon";
 import CardIcon from "../svg/CardIcon";

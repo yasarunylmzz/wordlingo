@@ -1,10 +1,9 @@
 import { create } from "zustand";
+import { Desk } from "../types/cardAndDesk";
 
 type DeskState = {
   desk: Partial<Desk>;
-  setDesk: (
-    desk: Pick<Desk, "title" | "description" | "userId" | "imageUrl">
-  ) => void;
+  setDesk: (desk: Pick<Desk, "title" | "description" | "id">) => void;
   deleteDesk: () => void;
   editDesk: (updatedDesk: Partial<Desk>) => void;
 };

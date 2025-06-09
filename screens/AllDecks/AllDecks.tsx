@@ -42,7 +42,7 @@ const AllDecks = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
 
       <DeckHeader
-        title="my decks"
+        title="Decks"
         onAddPress={() => navigation.navigate("CreateDeck")}
       />
 

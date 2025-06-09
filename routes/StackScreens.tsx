@@ -2,23 +2,23 @@ import { createStackNavigator } from "@react-navigation/stack";
 import LandingPages from "../screens/LandingPages/LandingPage";
 import LoginScreen from "../screens/LoginScreen/LoginScreen";
 import SignInScreen from "../screens/SignInScreen/SignInScreen";
-import HomePage from "../screens/HomePage";
+import HomePage from "../screens/HomeScreen/HomeScreen";
 import BottomScreen from "./BottomScreen";
-import ProfileScreen from "../screens/ProfileScreen";
-import SearchScreen from "../screens/SearchScreen";
-import TwoFactorAuth from "../screens/TwoFactorAuth";
+import ProfileScreen from "../screens/ProfileScreen/ProfileScreen";
+import SearchScreen from "../screens/SearchScreen/SearchScreen";
+import TwoFactorAuth from "../screens/TwoFactorAuthScreen/TwoFactorAuthScreen";
 import AllDecks from "../screens/AllDecks/AllDecks";
-import CreateDeck from "../screens/CreateDeck";
+import CreateDeck from "../screens/CreateDeckScreen/CreateDeckScreen";
 import CardDecks from "../screens/CardDecks/CardDecks";
-import MyAccount from "../screens/MyAccount";
-import FaceId from "../screens/FaceId";
-import HelpAndSupport from "../screens/HelpAndSupport";
-import AboutApp from "../screens/AboutApp";
+import MyAccount from "../screens/MyAccountScreen/MyAccountScreen";
+import FaceId from "../screens/FaceIdScreen/FaceIdScreen";
+import HelpAndSupport from "../screens/HelpSupportScreen/HelpSupportScreen";
+import AboutApp from "../screens/AboutScreen/AboutScreen";
 import FlipCardScreen from "../screens/FlipCardScreen/FlipCardScreen";
-import NotificationScreen from "../screens/NotificationScreen";
+import NotificationScreen from "../screens/NotificationScreen/NotificationScreen";
 import LearnScreen from "../screens/LearnMode/LearnScreen";
-import CreateCard from "../screens/CreateCard";
-import SplashScreen from "../screens/SplashScreen";
+import CreateCard from "../screens/CreateCardScreen/CreateCardScreen";
+import SplashScreen from "../screens/SplashScreen/SplashScreen";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../stores/userStore";
 import { jwtDecode, JwtPayload } from "jwt-decode";
@@ -30,8 +30,10 @@ function StackScreens() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  const userID = useAuthStore((state) => state.user.id);
   useEffect(() => {
     if (refreshToken) {
+      console.log(userID);
       try {
         const decodedRefreshToken = jwtDecode<JwtPayload>(refreshToken);
         if (

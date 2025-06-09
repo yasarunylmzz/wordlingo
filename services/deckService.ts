@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/userStore";
 import axiosInstance from "./AxiosInstance";
+import { useDeskStore } from "../stores/deckStore";
 
 const refreshToken = useAuthStore.getState().auth.refreshToken;
 const accessToken = useAuthStore.getState().auth.accessToken;
@@ -31,6 +32,13 @@ export async function createDesk(
       data,
       { headers }
     );
+    console.log("Desk created successfully:", response.data.desk_id);
+    useDeskStore.getState().setDesk({
+      id: response.data.desk_id,
+      title: response.data.title,
+      description: response.data.description,
+    });
+
     return response;
   } catch (error: any) {
     if (
@@ -47,6 +55,16 @@ export async function createDesk(
 }
 
 export async function getAllDecks(UserId: string) {
+  // Get tokens from your auth store
+  const accessToken = useAuthStore.getState().auth?.accessToken;
+  const refreshToken = useAuthStore.getState().auth?.refreshToken;
+
+  // Verify tokens exist
+  if (!accessToken || !refreshToken) {
+    console.error("Missing authentication tokens");
+    throw new Error("Authentication tokens not found");
+  }
+
   const headers = {
     Authorization: `Bearer ${refreshToken}`,
     "X-Access-Token": `Bearer ${accessToken}`,

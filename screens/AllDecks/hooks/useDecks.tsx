@@ -19,7 +19,7 @@ export const useDecks = () => {
     if (!userId || !refreshToken) return;
 
     try {
-      const response = await getAllDecks(userId, refreshToken);
+      const response = await getAllDecks(userId);
       setDeskList(response.data.data);
     } catch (error) {
       console.error("Error fetching decks:", error);
@@ -32,7 +32,7 @@ export const useDecks = () => {
 
     setRefreshing(true);
     try {
-      const response = await getAllDecks(userId, refreshToken);
+      const response = await getAllDecks(userId);
       setDeskList(response.data.data);
     } catch (error) {
       console.error("Error refreshing decks:", error);
@@ -54,7 +54,6 @@ export const useDecks = () => {
           onPress: async () => {
             try {
               setIsDeleting(true);
-              // Sadece deckId gönderiyoruz, diğer parametreler servis içinde zaten mevcut
               await deleteDeckService(deckId);
               // Silme işlemi başarılı olduysa, listeyi güncelle
               setDeskList((prev) => prev.filter((deck) => deck.ID !== deckId));

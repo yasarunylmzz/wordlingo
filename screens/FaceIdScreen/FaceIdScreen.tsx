@@ -1,7 +1,7 @@
 import { View, Text } from "react-native";
 import React from "react";
 
-const FaceId = () => {
+const FaceIdScreen = () => {
   return (
     <View>
       <Text>FaceId</Text>
@@ -9,4 +9,4 @@ const FaceId = () => {
   );
 };
 
-export default FaceId;
+export default FaceIdScreen;

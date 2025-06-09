@@ -13,11 +13,16 @@ import {
   ViewStyle,
   Alert,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { RootStackParamList } from "../RootStackParams";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { createCard } from "../../services/cardService";
 
 // Type tanımlamaları
 type ImportanceLevel = "low" | "medium" | "high";
+type CreateCardRouteProp = RouteProp<RootStackParamList, "CreateCard">;
+type CreateCardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface CardItem {
   id: number;
@@ -30,12 +35,15 @@ const CreateCard: React.FC = () => {
   // Zustand yerine şimdilik dummy değerler kullanıyoruz
   const dummyDeckTitle = "Yeni Kart Destesi";
 
+  const route = useRoute<CreateCardRouteProp>();
+  const navigation = useNavigation<CreateCardNavigationProp>();
+  const { deckId } = route.params;
+  console.log("Received Deck ID:", deckId);
+
   const [cards, setCards] = useState<CardItem[]>([
     { id: 1, term: "", definition: "", importance: "medium" },
     { id: 2, term: "", definition: "", importance: "medium" },
   ]);
-
-  const navigation = useNavigation();
 
   const handleGoBack = (): void => {
     Alert.alert(
@@ -48,7 +56,7 @@ const CreateCard: React.FC = () => {
     );
   };
 
-  const handleSave = (): void => {
+  const handleSave = async (): Promise<void> => {
     // Boş kartları filtrele
     const nonEmptyCards = cards.filter(
       (card) => card.term.trim() !== "" || card.definition.trim() !== ""
@@ -59,17 +67,39 @@ const CreateCard: React.FC = () => {
       return;
     }
 
-    // Burada zustand store'a veri kaydedebilirsin
-    console.log("Kaydedilen kartlar:", {
-      deckTitle: dummyDeckTitle,
-      cards: nonEmptyCards,
-    });
+    try {
+      // Kartları API'nin beklediği formata dönüştür
+      const cardsForAPI = nonEmptyCards.map((card) => ({
+        Language1: card.term,
+        Language2: card.definition,
+        ImportanceValue: importanceLevelToValue(card.importance), // önem seviyesini sayıya çevir
+        DeskID: deckId,
+      }));
 
-    alert(`${nonEmptyCards.length} kart kaydedildi`);
+      // Tüm kartları tek bir istekte gönder
+      await createCard(cardsForAPI);
 
-    // Ana sayfaya dön
-    navigation.navigate("Home");
+      alert(`${nonEmptyCards.length} kart kaydedildi`);
+      navigation.navigate("Home");
+    } catch (error) {
+      console.error("Kartlar kaydedilirken hata oluştu:", error);
+      alert("Kartlar kaydedilirken bir hata oluştu");
+    }
   };
+
+  // Yardımcı fonksiyon: önem seviyelerini sayısal değerlere dönüştürür
+  function importanceLevelToValue(level: "low" | "medium" | "high"): number {
+    switch (level) {
+      case "low":
+        return 1;
+      case "medium":
+        return 2;
+      case "high":
+        return 3;
+      default:
+        return 2;
+    }
+  }
 
   const updateCard = (
     id: number,

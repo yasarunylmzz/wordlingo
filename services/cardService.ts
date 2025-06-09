@@ -23,33 +23,29 @@ export async function getCardList(deskID: string) {
 }
 
 export async function createCard(
-  Language1: string,
-  Language2: string,
-  ImportanceValue: number,
-  DeskID: string
+  cards: Array<{
+    Language1: string;
+    Language2: string;
+    ImportanceValue: number;
+    DeskID: string;
+  }>
 ) {
-  const data = {
-    Language1: Language1,
-    Language2: Language2,
-    ImportanceValue: ImportanceValue,
-    DeskID: DeskID,
-  };
-
   const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${useAuthStore.getState().auth.refreshToken}`, // Token'ı Bearer formatında gönderme
-    "X-Access-Token": `Bearer ${useAuthStore.getState().auth.accessToken}`, // Aynı token'ı farklı bir header olarak da gönderme
+    Authorization: `Bearer ${useAuthStore.getState().auth.refreshToken}`,
+    "X-Access-Token": `Bearer ${useAuthStore.getState().auth.accessToken}`,
   };
 
   try {
     const response = await axiosInstance.post(
       "https://api.wordlingo.me/create-card",
-      [data],
+      cards, // Send the array directly
       { headers }
     );
     return response;
   } catch (error) {
     console.error("Error in createCard:", error);
+    throw error; // Re-throw to handle in calling function
   }
 }
 

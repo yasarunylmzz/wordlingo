@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import LeftArrow from "../svg/LeftArrow";
+import LeftArrow from "../../svg/LeftArrow";
 import { useNavigation } from "@react-navigation/native";
 
 const NotificationScreen = () => {

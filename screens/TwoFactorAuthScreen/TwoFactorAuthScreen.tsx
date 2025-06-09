@@ -1,27 +1,20 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Keyboard,
-  Alert,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Keyboard, Alert } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
-import { verification } from "../services/userService";
-import { useAuthStore } from "../stores/userStore";
+import { verification } from "../../services/userService";
+import { useAuthStore } from "../../stores/userStore";
+import CodeInput from "./components/CodeInput";
 
-const CODE_LENGTH = 6; // tek yerde tanımla
+const CODE_LENGTH = 6;
 
-const TwoFactorAuth = () => {
+const TwoFactorAuthScreen = () => {
   const navigation = useNavigation();
   const userID = useAuthStore((s) => s.user.id);
   const userEmail = useAuthStore((s) => s.user.email);
 
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""));
-  const [isSubmitting, setIsSubmitting] = useState(false); // tekrar çağrıyı engelle
-  const inputs = useRef<Array<TextInput | null>>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const filled = code.every((c) => c !== "");
@@ -52,25 +45,8 @@ const TwoFactorAuth = () => {
 
   const resetInputs = () => {
     setCode(Array(CODE_LENGTH).fill(""));
-    inputs.current[0]?.focus();
   };
 
-  /* ===== input kontrolleri ===== */
-  const handleChange = (text: string, index: number) => {
-    const newCode = [...code];
-    newCode[index] = text.replace(/[^0-9]/g, ""); // sadece rakam
-    setCode(newCode);
-
-    if (text && index < CODE_LENGTH - 1) inputs.current[index + 1]?.focus();
-  };
-
-  const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === "Backspace" && code[index] === "" && index > 0) {
-      inputs.current[index - 1]?.focus();
-    }
-  };
-
-  /* ======== UI ======== */
   return (
     <View style={styles.container}>
       <View style={styles.halfCircleContainer}>
@@ -88,36 +64,29 @@ const TwoFactorAuth = () => {
         <View style={styles.textContainer}>
           <Text style={styles.title}>Hey,</Text>
           <Text style={styles.title}>Login Now.</Text>
+          <Text style={styles.subtitle}>
+            Enter the 6-digit code sent to your email
+          </Text>
         </View>
 
-        <View style={styles.codeContainer}>
-          {code.map((val, idx) => (
-            <TextInput
-              key={idx}
-              ref={(ref) => (inputs.current[idx] = ref)}
-              style={styles.input}
-              keyboardType="number-pad"
-              maxLength={1}
-              value={val}
-              onChangeText={(t) => handleChange(t, idx)}
-              onKeyPress={(e) => handleKeyPress(e, idx)}
-              autoFocus={idx === 0}
-            />
-          ))}
-        </View>
+        <CodeInput
+          code={code}
+          setCode={setCode}
+          codeLength={CODE_LENGTH}
+          isSubmitting={isSubmitting}
+        />
       </View>
     </View>
   );
 };
 
-/* ========= Styles ========= */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F5F5F5",
-    padding: 10,
+    padding: 20,
   },
   halfCircleContainer: {
     position: "absolute",
@@ -126,29 +95,29 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 50,
   },
-  halfCircle: { transform: [{ rotate: "90deg" }] },
+  halfCircle: {
+    transform: [{ rotate: "90deg" }],
+  },
   contentContainer: {
     alignItems: "center",
     justifyContent: "center",
     width: "90%",
   },
-  textContainer: { width: "100%", marginBottom: 20, alignItems: "flex-start" },
-  title: { fontSize: 32, fontWeight: "bold", color: "#333" },
-  codeContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  textContainer: {
     width: "100%",
     marginBottom: 20,
+    alignItems: "flex-start",
   },
-  input: {
-    height: 50,
-    width: 50,
-    textAlign: "center",
-    fontSize: 24,
+  title: {
+    fontSize: 32,
+    fontWeight: "bold",
     color: "#333",
-    backgroundColor: "#E0E0E0",
-    borderRadius: 5,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 10,
   },
 });
 
-export default TwoFactorAuth;
+export default TwoFactorAuthScreen;
