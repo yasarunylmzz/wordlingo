@@ -9,8 +9,13 @@ import React, { useState, useEffect } from "react";
 import PlayIcon from "../../../svg/PlayIcon";
 import { useNavigation } from "@react-navigation/native";
 
-const BottomButton = () => {
-    const navigation = useNavigation();
+interface BottomButtonProps {
+  deckId?: string;
+  deckTitle?: string;
+}
+
+const BottomButton: React.FC<BottomButtonProps> = ({ deckId, deckTitle }) => {
+  const navigation = useNavigation();
   const [isDropDownVisible, setIsDropDownVisible] = useState(false);
   const fadeAnim = new Animated.Value(0);
   const [itemAnims] = useState([
@@ -88,7 +93,10 @@ const BottomButton = () => {
                 ],
               }}
             >
-              <TouchableOpacity onPress={() => navigation.navigate("LearnScreen")} style={styles.dropdownItem}>
+              <TouchableOpacity
+                onPress={() => (navigation as any).navigate("LearnScreen")}
+                style={styles.dropdownItem}
+              >
                 <Text style={styles.dropdownText}>📚 Öğrenme Modu</Text>
                 <Text style={styles.dropdownSubtext}>Temel tekrar</Text>
               </TouchableOpacity>
@@ -107,7 +115,15 @@ const BottomButton = () => {
                 ],
               }}
             >
-              <TouchableOpacity style={styles.dropdownItem} onPress={() => navigation.navigate("FlipCardScreen")}>}>
+              <TouchableOpacity
+                style={styles.dropdownItem}
+                onPress={() =>
+                  (navigation as any).navigate("FlipCardScreen", {
+                    deckId,
+                    deckTitle,
+                  })
+                }
+              >
                 <Text style={styles.dropdownText}>🃏 Kartları Çevir</Text>
                 <Text style={styles.dropdownSubtext}>Hızlı test</Text>
               </TouchableOpacity>

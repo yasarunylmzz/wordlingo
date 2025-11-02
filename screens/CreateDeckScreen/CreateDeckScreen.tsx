@@ -15,29 +15,31 @@ import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useAuthStore } from "../../stores/userStore";
 import { createDesk } from "../../services/deckService";
-import { useDeskStore } from "../../stores/deckStore";
+import { RootStackParamList } from "../RootStackParams";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 const CreateDeck: React.FC = () => {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
-  const navigation = useNavigation();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const userId = useAuthStore((state) => state.user.id);
 
   const handleGoBack = (): void => {
     navigation.goBack();
   };
+
   const handleCreateDeck = async () => {
-    if (!title.trim()) return alert("Başlık boş olamaz");
-    if (!userId) return alert("Kullanıcı girişi yapmanız gerekiyor");
+    if (!title.trim()) return alert("Title cannot be empty");
+    if (!userId) return alert("You need to log in");
 
     try {
-      await createDesk(title, description, userId, null);
-      navigation.navigate("CreateCard", {
-        deckId: useDeskStore.getState().desk.id,
-      });
+      await createDesk(title, description, userId);
+
+      navigation.navigate("CreateCard");
     } catch (error: any) {
-      const msg = error.response?.data?.message || "Bilinmeyen hata";
-      alert(`Hata oluştu: ${msg}`);
+      const msg = error.response?.data?.message || "Unknown error";
+      alert(`Error occurred: ${msg}`);
     }
   };
 
@@ -50,7 +52,7 @@ const CreateDeck: React.FC = () => {
         <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
           <Icon name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Yeni Kart Destesi Oluştur</Text>
+        <Text style={styles.headerTitle}>Create New Card Deck</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -61,10 +63,10 @@ const CreateDeck: React.FC = () => {
         <ScrollView style={styles.scrollView}>
           {/* Title & Description */}
           <View style={styles.titleSection}>
-            <Text style={styles.sectionLabel}>BAŞLIK</Text>
+            <Text style={styles.sectionLabel}>TITLE</Text>
             <TextInput
               style={styles.titleInput}
-              placeholder="Kart destesi başlığı"
+              placeholder="Card deck title"
               placeholderTextColor="#888"
               value={title}
               onChangeText={setTitle}
@@ -72,10 +74,10 @@ const CreateDeck: React.FC = () => {
           </View>
 
           <View style={styles.descriptionSection}>
-            <Text style={styles.sectionLabel}>AÇIKLAMA</Text>
+            <Text style={styles.sectionLabel}>DESCRIPTION</Text>
             <TextInput
               style={styles.descriptionInput}
-              placeholder="Kart destesi için açıklama ekleyin..."
+              placeholder="Add description for card deck..."
               placeholderTextColor="#888"
               multiline
               value={description}
@@ -87,8 +89,7 @@ const CreateDeck: React.FC = () => {
           <View style={styles.infoSection}>
             <Icon name="info-outline" size={24} color="#5f8aff" />
             <Text style={styles.infoText}>
-              Kart destesi oluşturduktan sonra, içine kartlar eklemeye
-              başlayabilirsiniz.
+              After creating the card deck, you can start adding cards to it.
             </Text>
           </View>
 
@@ -100,7 +101,7 @@ const CreateDeck: React.FC = () => {
           style={styles.createButton}
           onPress={handleCreateDeck}
         >
-          <Text style={styles.createButtonText}>Kart Destesi Oluştur</Text>
+          <Text style={styles.createButtonText}>Create Card Deck</Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>

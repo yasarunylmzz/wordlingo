@@ -1,17 +1,19 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Avatar from "../../../svg/Avatar";
 
 interface ProfileHeaderProps {
   name: string;
   surname: string;
   username: string;
+  onSettingsPress: () => void;
 }
 
 const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   name,
   surname,
   username,
+  onSettingsPress,
 }) => {
   function capitalize(str: string): string {
     if (!str) return "";
@@ -19,71 +21,78 @@ const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   }
 
   return (
-    <View style={styles.topSection}>
-      <Text style={styles.profileText}>Profile</Text>
-      <View style={styles.scrollView}>
-        <View style={styles.container}>
-          <View style={styles.profile}>
-            <Avatar />
-            <View style={styles.textProfileSection}>
-              <Text style={styles.name}>
-                {capitalize(name)} {capitalize(surname)}
-              </Text>
-              <Text style={styles.username}>@{username}</Text>
-            </View>
-          </View>
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Text style={styles.profileText}>Profile</Text>
+        <TouchableOpacity
+          onPress={onSettingsPress}
+          style={styles.settingsButton}
+        >
+          <Text style={styles.settingsIcon}>⚙</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.profileSection}>
+        <View style={styles.avatarContainer}>
+          <Avatar />
         </View>
+        <Text style={styles.name}>
+          {capitalize(name)} {capitalize(surname)}
+        </Text>
+        <Text style={styles.username}>@{username}</Text>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  topSection: {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-  },
-  profile: {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  scrollView: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
   container: {
-    display: "flex",
-    flexDirection: "row",
-    width: "95%",
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 25,
-    backgroundColor: "#4f24d8",
-    alignItems: "center",
-    borderRadius: 10,
+    width: "100%",
+    paddingBottom: 20,
   },
-  name: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
   profileText: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#4f24d8",
-    padding: 20,
+  },
+  settingsButton: {
+    padding: 10,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 20,
+  },
+  settingsIcon: {
+    fontSize: 18,
+    color: "#666",
+  },
+  profileSection: {
+    alignItems: "center",
+    paddingTop: 20,
+    paddingHorizontal: 20,
+  },
+  avatarContainer: {
+    marginBottom: 16,
+    transform: [{ scale: 1.2 }],
+  },
+  name: {
+    color: "#1a1a1a",
+    fontSize: 24,
+    fontWeight: "600",
+    marginBottom: 4,
+    textAlign: "center",
   },
   username: {
-    color: "#fff",
-    fontSize: 11,
-  },
-  textProfileSection: {
-    display: "flex",
-    gap: 2,
+    color: "#666",
+    fontSize: 16,
+    fontWeight: "400",
+    textAlign: "center",
   },
 });
 

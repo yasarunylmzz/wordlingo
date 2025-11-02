@@ -1,5 +1,6 @@
 export interface Card {
   id: string;
+  deskID: string;
   word1: string;
   word2: string;
   importanceLevel: "low" | "medium" | "high";

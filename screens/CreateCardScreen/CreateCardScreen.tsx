@@ -18,11 +18,9 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 import { RootStackParamList } from "../RootStackParams";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { createCard } from "../../services/cardService";
+import { useDeskStore } from "../../stores/deckStore";
 
-// Type tanımlamaları
 type ImportanceLevel = "low" | "medium" | "high";
-type CreateCardRouteProp = RouteProp<RootStackParamList, "CreateCard">;
-type CreateCardNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface CardItem {
   id: number;
@@ -32,13 +30,12 @@ interface CardItem {
 }
 
 const CreateCard: React.FC = () => {
-  // Zustand yerine şimdilik dummy değerler kullanıyoruz
-  const dummyDeckTitle = "Yeni Kart Destesi";
+  const dummyDeckTitle = "New Card Deck";
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const createdDesk = useDeskStore.getState().desk;
 
-  const route = useRoute<CreateCardRouteProp>();
-  const navigation = useNavigation<CreateCardNavigationProp>();
-  const { deckId } = route.params;
-  console.log("Received Deck ID:", deckId);
+  console.log("Received Deck ID:", createdDesk.id);
 
   const [cards, setCards] = useState<CardItem[]>([
     { id: 1, term: "", definition: "", importance: "medium" },
@@ -47,11 +44,11 @@ const CreateCard: React.FC = () => {
 
   const handleGoBack = (): void => {
     Alert.alert(
-      "Çıkış yapmak istediğinize emin misiniz?",
-      "Kaydedilmemiş değişiklikler kaybolacaktır.",
+      "Are you sure you want to exit?",
+      "Unsaved changes will be lost.",
       [
-        { text: "İptal", style: "cancel" },
-        { text: "Çık", onPress: () => navigation.goBack() },
+        { text: "Cancel", style: "cancel" },
+        { text: "Exit", onPress: () => navigation.goBack() },
       ]
     );
   };
@@ -63,31 +60,31 @@ const CreateCard: React.FC = () => {
     );
 
     if (nonEmptyCards.length < 2) {
-      alert("En az 2 kart eklemelisiniz");
+      alert("You need to add at least 2 cards");
       return;
     }
 
     try {
-      // Kartları API'nin beklediği formata dönüştür
+      // Transform cards to the format expected by the API
       const cardsForAPI = nonEmptyCards.map((card) => ({
         Language1: card.term,
         Language2: card.definition,
-        ImportanceValue: importanceLevelToValue(card.importance), // önem seviyesini sayıya çevir
-        DeskID: deckId,
+        ImportanceValue: importanceLevelToValue(card.importance), // convert importance level to number
+        DeskID: createdDesk.id!,
       }));
 
-      // Tüm kartları tek bir istekte gönder
+      // Send all cards in a single request
       await createCard(cardsForAPI);
 
-      alert(`${nonEmptyCards.length} kart kaydedildi`);
-      navigation.navigate("Home");
+      alert(`${nonEmptyCards.length} cards saved`);
+      navigation.navigate("AllDecks");
     } catch (error) {
-      console.error("Kartlar kaydedilirken hata oluştu:", error);
-      alert("Kartlar kaydedilirken bir hata oluştu");
+      console.error("Error saving cards:", error);
+      alert("An error occurred while saving cards");
     }
   };
 
-  // Yardımcı fonksiyon: önem seviyelerini sayısal değerlere dönüştürür
+  // Helper function: converts importance levels to numerical values
   function importanceLevelToValue(level: "low" | "medium" | "high"): number {
     switch (level) {
       case "low":
@@ -130,7 +127,7 @@ const CreateCard: React.FC = () => {
 
   const removeCard = (id: number): void => {
     if (cards.length <= 2) {
-      alert("En az 2 karta ihtiyacınız var");
+      alert("You need at least 2 cards");
       return;
     }
     setCards(cards.filter((card) => card.id !== id));
@@ -157,14 +154,14 @@ const CreateCard: React.FC = () => {
           {/* Cards Header */}
           <View style={styles.cardsHeader}>
             <View style={styles.cardsCount}>
-              <Text style={styles.cardsCountText}>{cards.length} Kart</Text>
+              <Text style={styles.cardsCountText}>{cards.length} Cards</Text>
               <Text style={styles.cardsHint}>
-                TAB veya ENTER ile alanlar arasında geçiş yapabilirsiniz
+                You can switch between fields using TAB or ENTER
               </Text>
             </View>
             <TouchableOpacity style={styles.headerButton}>
               <Icon name="cloud-upload" size={22} color="#fff" />
-              <Text style={styles.headerButtonText}>İçe Aktar</Text>
+              <Text style={styles.headerButtonText}>Import</Text>
             </TouchableOpacity>
           </View>
 
@@ -177,14 +174,14 @@ const CreateCard: React.FC = () => {
               <View style={styles.cardInputContainer}>
                 <TextInput
                   style={styles.cardTermInput}
-                  placeholder="Terim girin"
+                  placeholder="Enter term"
                   placeholderTextColor="#888"
                   value={card.term}
                   onChangeText={(text) => updateCard(card.id, "term", text)}
                 />
                 <TextInput
                   style={styles.cardDefinitionInput}
-                  placeholder="Tanım girin"
+                  placeholder="Enter definition"
                   placeholderTextColor="#888"
                   value={card.definition}
                   onChangeText={(text) =>
@@ -197,10 +194,10 @@ const CreateCard: React.FC = () => {
                     (level) => {
                       const levelText =
                         level === "low"
-                          ? "Düşük"
+                          ? "Low"
                           : level === "medium"
-                          ? "Orta"
-                          : "Yüksek";
+                          ? "Medium"
+                          : "High";
                       return (
                         <TouchableOpacity
                           key={level}
@@ -240,7 +237,7 @@ const CreateCard: React.FC = () => {
           {/* Add Card Button */}
           <TouchableOpacity style={styles.addCardButton} onPress={addCard}>
             <Icon name="add" size={24} color="#5f8aff" />
-            <Text style={styles.addCardText}>Kart ekle</Text>
+            <Text style={styles.addCardText}>Add card</Text>
           </TouchableOpacity>
 
           <View style={styles.bottomPadding} />
@@ -248,7 +245,7 @@ const CreateCard: React.FC = () => {
 
         {/* Save Button */}
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Kaydet</Text>
+          <Text style={styles.saveButtonText}>Save</Text>
         </TouchableOpacity>
       </KeyboardAvoidingView>
     </SafeAreaView>

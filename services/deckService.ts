@@ -3,16 +3,15 @@ import { useAuthStore } from "../stores/userStore";
 import axiosInstance from "./AxiosInstance";
 import { useDeskStore } from "../stores/deckStore";
 
-const refreshToken = useAuthStore.getState().auth.refreshToken;
-const accessToken = useAuthStore.getState().auth.accessToken;
-const UserId = useAuthStore.getState().user.id;
-
 export async function createDesk(
   Title: string,
   Description: string,
-  UserId: string,
   ImageLink: string | null
 ) {
+  const refreshToken = useAuthStore.getState().auth.refreshToken;
+  const accessToken = useAuthStore.getState().auth.accessToken;
+  const UserId = useAuthStore.getState().user.id;
+
   const data = {
     Title: Title,
     Description: Description,
@@ -83,6 +82,9 @@ export async function getAllDecks(UserId: string) {
 }
 
 export async function deleteDeck(Id: string) {
+  const refreshToken = useAuthStore.getState().auth.refreshToken;
+  const accessToken = useAuthStore.getState().auth.accessToken;
+  const UserId = useAuthStore.getState().user.id;
   const headers = {
     Authorization: `Bearer ${refreshToken}`,
     "X-Access-Token": `Bearer ${accessToken}`,
@@ -104,10 +106,11 @@ export async function updateDeck(
   deskId: string,
   Title: string,
   Description: string,
-  ImageLink: string | null,
-  refreshToken: string,
-  accessToken: string
+  ImageLink: string | null
 ) {
+  const refreshToken = useAuthStore.getState().auth.refreshToken;
+  const accessToken = useAuthStore.getState().auth.accessToken;
+
   const data = {
     Title: Title,
     Description: Description,

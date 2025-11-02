@@ -1,7 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/userStore";
 
-// Refresh edilen token'ı dışarı aktarmak istersen, bir değişken kullan
 let latestAccessToken: string | null = null;
 
 const axiosInstance = axios.create({
@@ -11,7 +10,6 @@ const axiosInstance = axios.create({
   },
 });
 
-// Response Interceptor
 axiosInstance.interceptors.response.use(
   (response) => {
     return response;
@@ -19,7 +17,6 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Eğer access token süresi dolduysa ve server yeni access token verdiyse
     if (
       error.response &&
       error.response.status === 401 &&
@@ -37,21 +34,17 @@ axiosInstance.interceptors.response.use(
         },
       });
 
-      // Token'ı güncelle
       latestAccessToken = newAccessToken;
 
-      // Header'ı güncelleyip tekrar dene
       originalRequest.headers["X-Access-Token"] = `Bearer ${newAccessToken}`;
 
       return axiosInstance(originalRequest);
     }
 
-    // Diğer hataları pasla
     return Promise.reject(error);
   }
 );
 
-// Yardımcı fonksiyon: en son access token'ı almak için
 export function getLatestAccessToken() {
   return latestAccessToken;
 }

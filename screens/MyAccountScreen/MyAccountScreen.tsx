@@ -56,6 +56,19 @@ const MyAccount = ({ navigation }: any) => {
   const email = useAuthStore((state) => state.user.email);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    username: username || "",
+    firstName: name || "",
+    lastName: surname || "",
+    email: email || "",
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   const toggleEdit = () => {
     if (isEditing) {
@@ -118,7 +131,7 @@ const MyAccount = ({ navigation }: any) => {
                 </TouchableOpacity>
               )}
             </View>
-            <Text style={styles.username}>@{username}</Text>
+            <Text style={styles.username}>@{formData.username}</Text>
           </View>
 
           {/* User Information Card */}
@@ -127,15 +140,16 @@ const MyAccount = ({ navigation }: any) => {
 
             <InputField
               label="Username"
-              value={username}
+              value={formData.username}
               editable={isEditing}
-              onChangeText={(text: string) => handleInputChange("phone", text)}
-              keyboardType="phone-pad"
+              onChangeText={(text: string) =>
+                handleInputChange("username", text)
+              }
             />
 
             <InputField
               label="First Name"
-              value={name}
+              value={formData.firstName}
               editable={isEditing}
               onChangeText={(text: string) =>
                 handleInputChange("firstName", text)
@@ -145,7 +159,7 @@ const MyAccount = ({ navigation }: any) => {
 
             <InputField
               label="Last Name"
-              value={surname}
+              value={formData.lastName}
               editable={isEditing}
               onChangeText={(text: string) =>
                 handleInputChange("lastName", text)
@@ -155,7 +169,7 @@ const MyAccount = ({ navigation }: any) => {
 
             <InputField
               label="Email Address"
-              value={email}
+              value={formData.email}
               editable={isEditing}
               onChangeText={(text: string) => handleInputChange("email", text)}
               keyboardType="email-address"

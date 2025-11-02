@@ -8,15 +8,19 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yasarunylmzz.wordLingo"
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
 
     "android": {
-      "package": "com.yasarunylmzz.wordLingo"
+      "package": "com.yasarunylmzz.wordLingo",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": [
+      "expo-secure-store",
+      "@react-native-google-signin/google-signin"
+    ]
   }
 }

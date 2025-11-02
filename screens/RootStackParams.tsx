@@ -19,6 +19,7 @@ export type RootStackParamList = {
   AboutApp: undefined;
   NotificationScreen: undefined;
   CreateDeck: undefined;
-  CreateCard: { deckId: string };
+  CreateCard: undefined;
   Header: undefined;
+  AllDesks: undefined;
 };

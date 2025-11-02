@@ -1,5 +1,10 @@
-import React, { useEffect } from "react";
-import { View, SafeAreaView, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  SafeAreaView,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import { useRoute } from "@react-navigation/native";
 
 import Header from "./Components/Header";
@@ -9,6 +14,7 @@ import CustomButton from "./Components/CustomButton";
 import CardModal from "./Components/CardModal";
 import { useCardOperations } from "./hooks/useCardOperations";
 import { getCardList } from "../../services/cardService";
+import { useCardStore } from "../../stores/cardStore";
 
 const CardDecks: React.FC = () => {
   const route = useRoute();
@@ -16,6 +22,16 @@ const CardDecks: React.FC = () => {
     deckId: string;
     deckTitle: string;
   };
+
+  const [loading, setLoading] = useState(false);
+
+  // Zustand store'dan card işlemlerini al
+  const {
+    cards: storeCards,
+    setCards: setStoreCards,
+    getCards,
+  } = useCardStore();
+  const currentCards = getCards(deckId);
 
   const {
     cards,
@@ -36,40 +52,76 @@ const CardDecks: React.FC = () => {
     numberToImportanceValue,
   } = useCardOperations(deckId);
 
-  useEffect(() => {
-    getCardList(deckId)
-      .then((response) => {
-        const rawCards = response?.data.params || [];
-        const convertedCards = rawCards.map((card: any) => ({
+  const fetchCards = async () => {
+    setLoading(true);
+    try {
+      const response = await getCardList(deckId);
+      const rawCards = response?.data.params || [];
+      const convertedCards = rawCards.map((card: any) => ({
+        id: card.ID,
+        deskID: deckId,
+        word1: card.Language1,
+        word2: card.Language2,
+        importanceLevel: numberToImportanceValue(card.ImportanceValue),
+      }));
+
+      // Store'a kaydet
+      setStoreCards(deckId, convertedCards);
+
+      // Local hook'a da kaydet (eski yapı ile uyumluluk için)
+      setCards(
+        rawCards.map((card: any) => ({
           ID: card.ID,
           Language1: card.Language1,
           Language2: card.Language2,
           ImportanceValue: numberToImportanceValue(card.ImportanceValue),
-        }));
-        setCards(convertedCards);
-      })
-      .catch((error) => {
-        console.error("Error fetching cards:", error);
-      });
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching cards:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Eğer store'da cart yoksa API'den çek
+    if (currentCards.length === 0) {
+      fetchCards();
+    } else {
+      // Store'dan gelen kartları local hook'a aktar
+      setCards(
+        currentCards.map((card) => ({
+          ID: card.id,
+          Language1: card.word1,
+          Language2: card.word2,
+          ImportanceValue: card.importanceLevel,
+        }))
+      );
+    }
   }, [deckId]);
 
   return (
     <SafeAreaView style={styles.container}>
       <Header title={deckTitle} />
 
-      <CardList
-        cards={cards.map((card) => ({
-          id: card.ID,
-          word1: card.Language1,
-          word2: card.Language2,
-          importanceLevel: card.ImportanceValue,
-        }))}
-        onDeleteCard={handleDeleteCard}
-        onEditCard={handleEditCard}
-      />
+      {loading ? (
+        <ActivityIndicator size="large" color="#007AFF" style={{ flex: 1 }} />
+      ) : (
+        <CardList
+          cards={cards.map((card) => ({
+            id: card.ID,
+            word1: card.Language1,
+            word2: card.Language2,
+            importanceLevel: card.ImportanceValue,
+          }))}
+          onDeleteCard={handleDeleteCard}
+          onEditCard={handleEditCard}
+        />
+      )}
 
       <View style={styles.bottomButton}>
-        <BottomButton />
+        <BottomButton deckId={deckId} deckTitle={deckTitle} />
         <CustomButton onPress={openAddModal} />
       </View>
 

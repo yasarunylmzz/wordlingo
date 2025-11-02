@@ -9,13 +9,12 @@ import {
   StatusBar,
   RefreshControl,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useDecks } from "./hooks/useDecks";
 import DeckCard from "./components/DeckCard";
 import DeckHeader from "./components/DeckHeader";
 
-const AllDecks = () => {
+const AllDesks = () => {
   const { deskList, refreshing, isDeleting, onRefresh, deleteDeck } =
     useDecks();
   const navigation = useNavigation();
@@ -121,8 +120,8 @@ export const styles = StyleSheet.create({
 
   // Deck konteyner
   deckContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
   },
   emptyContainer: {
     flex: 1,
@@ -180,7 +179,6 @@ export const styles = StyleSheet.create({
   deckDescription: {
     fontSize: 14,
     color: "#49709c",
-    marginBottom: 8,
     lineHeight: 18,
   },
   deckMeta: {
@@ -220,4 +218,4 @@ export const styles = StyleSheet.create({
   },
 });
 
-export default AllDecks;
+export default AllDesks;

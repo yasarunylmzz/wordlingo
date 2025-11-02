@@ -33,8 +33,8 @@ const ChartComponent = ({ data, dates }: { data: any; dates: any }) => {
 
       <View style={styles.chartArea}>
         <LineChart
-          width={screenWidth - 70}
-          height={screenHeight * 0.22}
+          width={screenWidth - 64}
+          height={screenHeight * 0.12}
           data={data}
           areaChart
           backgroundColor={"transparent"}
@@ -101,28 +101,27 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#fff",
     borderRadius: 16,
-    padding: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-    marginVertical: 8,
   },
+
   headerContainer: {
     marginBottom: 14,
+    padding: 16,
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 20,
     fontWeight: "bold",
     color: "#111827",
   },
   statsContainer: {
     flexDirection: "row",
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    backgroundColor: "#fff",
+    padding: 8,
+    marginBottom: 8,
     alignItems: "center",
   },
   statItem: {

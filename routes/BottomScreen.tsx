@@ -7,7 +7,7 @@ import ProfileIcon from "../svg/ProfileIcon";
 import GridIcon from "../svg/GridIcon";
 import CardIcon from "../svg/CardIcon";
 import HomeIcon from "../svg/HomeIcon";
-import AllDecks from "../screens/AllDecks/AllDecks";
+import AllDecks from "../screens/AllDesks/AllDesks";
 
 const height = Dimensions.get("window").height;
 const Tab = createBottomTabNavigator();

@@ -13,14 +13,20 @@ import {
 import { Swipeable } from "react-native-gesture-handler";
 import { MaterialIcons } from "@expo/vector-icons";
 
+interface Todo {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
 const TodoComponents = () => {
-  const [todos, setTodos] = useState([
+  const [todos, setTodos] = useState<Todo[]>([
     { id: "1", title: "Complete React Native project", completed: false },
     { id: "2", title: "Study for exams", completed: false },
     { id: "3", title: "Read a new book", completed: true },
   ]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentTodo, setCurrentTodo] = useState(null);
+  const [currentTodo, setCurrentTodo] = useState<Todo | null>(null);
   const [newTodo, setNewTodo] = useState("");
 
   const handleAddTodo = () => {
@@ -47,11 +53,11 @@ const TodoComponents = () => {
     }
   };
 
-  const handleDeleteTodo = (id) => {
+  const handleDeleteTodo = (id: string) => {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
-  const renderRightActions = (progress, dragX, item) => {
+  const renderRightActions = (progress: any, dragX: any, item: Todo) => {
     const trans = dragX.interpolate({
       inputRange: [-100, 0],
       outputRange: [0, 100],
@@ -80,7 +86,7 @@ const TodoComponents = () => {
     );
   };
 
-  const renderItem = ({ item, index }) => (
+  const renderItem = ({ item, index }: { item: Todo; index: number }) => (
     <Swipeable
       renderRightActions={(progress, dragX) =>
         renderRightActions(progress, dragX, item)
@@ -120,7 +126,7 @@ const TodoComponents = () => {
   const EmptyComponent = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyText}>
-        No tasks yet. Add one to get started!
+        ✨ No tasks yet{"\n"}Add your first task to get started!
       </Text>
     </View>
   );
@@ -206,72 +212,78 @@ const TodoComponents = () => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    marginTop: 15,
-    padding: 18,
-    marginBottom: 60,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: 20,
+    marginTop: 12,
+    padding: 20,
+    marginBottom: 20,
+    shadowColor: "#4f42d8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 18,
+    marginBottom: 20,
   },
   titleContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   header: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#111827",
-    marginRight: 10,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1f2937",
+    marginRight: 12,
   },
   countContainer: {
-    backgroundColor: "#EEEDFC",
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    backgroundColor: "#f0f9ff",
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "#e0f2fe",
   },
   countText: {
-    color: "#4f42d8",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: "#0369a1",
+    fontSize: 13,
+    fontWeight: "700",
   },
   addButton: {
     backgroundColor: "#4f42d8",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 24,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 25,
     shadowColor: "#4f42d8",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 4,
   },
   addButtonText: {
     color: "#fff",
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   todoItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: "#f8fafc",
+    padding: 18,
+    borderRadius: 16,
     position: "relative",
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   firstTodoItem: {
-    borderLeftWidth: 3,
+    backgroundColor: "#fef7ff",
+    borderLeftWidth: 4,
     borderLeftColor: "#4f42d8",
+    borderColor: "#e9d5ff",
   },
   todoContent: {
     flex: 1,
@@ -279,108 +291,131 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   checkboxContainer: {
-    marginRight: 12,
+    marginRight: 15,
+    transform: [{ scale: 1.1 }],
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 2.5,
     borderColor: "#4f42d8",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#fff",
   },
   checked: {
     backgroundColor: "#4f42d8",
+    borderColor: "#4f42d8",
   },
   todoText: {
     fontSize: 16,
     color: "#374151",
     flex: 1,
-    fontWeight: "500",
+    fontWeight: "600",
+    lineHeight: 22,
   },
   completedText: {
     textDecorationLine: "line-through",
     color: "#9ca3af",
+    fontWeight: "400",
   },
   priorityIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FFBA0A",
-    marginLeft: 8,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "#f59e0b",
+    marginLeft: 12,
+    shadowColor: "#f59e0b",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 1,
   },
   rightActions: {
     flexDirection: "row",
     alignItems: "center",
-    width: 120,
+    width: 130,
     justifyContent: "space-between",
-    paddingRight: 10,
+    paddingRight: 12,
   },
   actionButton: {
     justifyContent: "center",
     alignItems: "center",
-    width: 50,
-    height: 50,
-    borderRadius: 10,
+    width: 55,
+    height: 55,
+    borderRadius: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   editButton: {
-    backgroundColor: "#10B981", // Green color
+    backgroundColor: "#10b981",
   },
   deleteButton: {
-    backgroundColor: "#EF4444", // Red color
+    backgroundColor: "#ef4444",
   },
   separator: {
-    height: 10,
+    height: 12,
   },
   listContent: {
     paddingTop: 5,
-    paddingBottom: 10,
+    paddingBottom: 15,
   },
   emptyContainer: {
-    padding: 20,
+    padding: 30,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#f8fafc",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#e2e8f0",
+    borderStyle: "dashed",
   },
   emptyText: {
-    color: "#9ca3af",
+    color: "#64748b",
     fontSize: 16,
     textAlign: "center",
+    fontWeight: "500",
+    lineHeight: 24,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.65)",
   },
   modalContent: {
-    width: "85%",
+    width: "88%",
     backgroundColor: "#fff",
-    padding: 24,
-    borderRadius: 16,
-    elevation: 8,
+    padding: 28,
+    borderRadius: 20,
+    elevation: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#111827",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 20,
+    color: "#1f2937",
     textAlign: "center",
   },
   textInput: {
     width: "100%",
-    borderColor: "#E5E7EB",
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    borderColor: "#d1d5db",
+    borderWidth: 2,
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 28,
     fontSize: 16,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#f9fafb",
     color: "#111827",
+    fontWeight: "500",
   },
   modalButtons: {
     flexDirection: "row",
@@ -388,36 +423,38 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   cancelButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: "#F3F4F6",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    backgroundColor: "#f3f4f6",
     flex: 1,
-    marginRight: 8,
+    marginRight: 10,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
   cancelButtonText: {
-    color: "#4B5563",
-    fontWeight: "600",
+    color: "#4b5563",
+    fontWeight: "700",
     fontSize: 16,
   },
   saveButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 14,
     backgroundColor: "#4f42d8",
     flex: 1,
-    marginLeft: 8,
+    marginLeft: 10,
     alignItems: "center",
     shadowColor: "#4f42d8",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   saveButtonText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
     fontSize: 16,
   },
 });

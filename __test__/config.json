@@ -1,5 +1,0 @@
-{
-  "testRunner": "jest",
-  "runnerConfig": "__test__/jest.config.ts",
-  "specs": "e2e"
-}
