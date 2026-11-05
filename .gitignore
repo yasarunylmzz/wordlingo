@@ -76,5 +76,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# @end expo-cliandroid/
+# @end expo-cli
+android/
 ios/

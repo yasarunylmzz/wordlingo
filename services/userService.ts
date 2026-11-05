@@ -8,6 +8,7 @@ export async function loginUser(email: string, password: string) {
   };
 
   try {
+    console.log("Login API base:", API_BASE_URL);
     const response = await axios.post(`${API_BASE_URL}/login`, data);
     console.log("Response:", response.status);
     console.log(response.headers);
