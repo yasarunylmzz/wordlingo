@@ -3,6 +3,7 @@ import { Card } from "../types/cardAndDesk";
 import { deleteCard } from "../services/cardService";
 import { persist, createJSONStorage } from "zustand/middleware";
 import * as SecureStore from "expo-secure-store";
+import { useLearningStore } from "./learningStore";
 
 // Secure storage adapter for zustand persist
 const secureStorage = createJSONStorage(() => ({
@@ -51,6 +52,8 @@ export const useCardStore = create<CardState>()(
               [deckId]: cards,
             },
           }));
+          // Phase 1: seed default learning state for each card (SecureStore via learningStore)
+          useLearningStore.getState().seedDeskCards(deckId, cards);
         } catch (error) {
           console.log("Error setting cards:", error);
         }

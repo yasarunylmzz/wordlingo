@@ -5,7 +5,9 @@
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "bun test domain/learning",
+    "test:learning": "bun test domain/learning"
   },
   "dependencies": {
     "@expo/metro-runtime": "^5.0.5",
