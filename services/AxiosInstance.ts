@@ -1,10 +1,11 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/userStore";
+import { API_BASE_URL } from "./apiConfig";
 
 let latestAccessToken: string | null = null;
 
 const axiosInstance = axios.create({
-  baseURL: "https://api.wordlingo.me",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },
