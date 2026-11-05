@@ -21,6 +21,15 @@ export type RootStackParamList = {
   HelpAndSupport: undefined;
   AboutApp: undefined;
   FlipCardScreen: { deckId: string; deckTitle: string };
+  /** Minimal Phase 2 flip summary (full StudyResult is Phase 4). */
+  FlipSessionResult: {
+    deskId: string;
+    deckTitle: string;
+    correct: number;
+    wrong: number;
+    total: number;
+    durationMs: number;
+  };
   LearnScreen: { deckId: string; deckTitle: string };
   CreateCard: undefined;
 

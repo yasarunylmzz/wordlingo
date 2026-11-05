@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -14,58 +14,172 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { useCardStore } from "../../../stores/cardStore";
+import { loadSession, finishSession } from "../../../services/studySessionService";
+import { useLearningStore } from "../../../stores/learningStore";
+import type { StudyCard } from "../../../domain/learning/types";
 
 const { width, height } = Dimensions.get("window");
 
-interface CardData {
-  front: string;
-  back: string;
-}
+/** Plan Phase 2: right = correct, left = wrong (TR/EN labels match). */
+export type FlipSwipeDirection = "left" | "right";
+
+export type FlipSessionProgress = {
+  remaining: number;
+  total: number;
+  correct: number;
+  wrong: number;
+};
+
+export type FlipSessionCompletePayload = {
+  deskId: string;
+  deckTitle: string;
+  correct: number;
+  wrong: number;
+  total: number;
+  durationMs: number;
+};
 
 interface FlipCardProps {
   deckId: string;
+  deckTitle: string;
+  onProgress?: (progress: FlipSessionProgress) => void;
+  onSessionComplete?: (payload: FlipSessionCompletePayload) => void;
 }
 
-const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
-  const { getCards } = useCardStore();
-
-  const [cardData, setCardData] = useState<CardData[]>([]);
+const FlipCard: React.FC<FlipCardProps> = ({
+  deckId,
+  deckTitle,
+  onProgress,
+  onSessionComplete,
+}) => {
+  const [stack, setStack] = useState<StudyCard[]>([]);
+  const [total, setTotal] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [wrong, setWrong] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isGestureActive, setIsGestureActive] = useState(false);
+  const [finished, setFinished] = useState(false);
+
+  const startedAtRef = useRef(Date.now());
+  const correctRef = useRef(0);
+  const wrongRef = useRef(0);
+  const totalRef = useRef(0);
+  const completedRef = useRef(false);
 
   const translateX = useSharedValue(0);
   const flipAnimValue = useSharedValue(0);
 
   const SWIPE_THRESHOLD = 120;
 
+  const emitProgress = useCallback(
+    (remaining: number, nextCorrect: number, nextWrong: number, nextTotal: number) => {
+      onProgress?.({
+        remaining,
+        total: nextTotal,
+        correct: nextCorrect,
+        wrong: nextWrong,
+      });
+    },
+    [onProgress]
+  );
+
   useEffect(() => {
+    completedRef.current = false;
+    startedAtRef.current = Date.now();
+    correctRef.current = 0;
+    wrongRef.current = 0;
+    setCorrect(0);
+    setWrong(0);
+    setFinished(false);
+    setIsFlipped(false);
+    flipAnimValue.value = 0;
+    translateX.value = 0;
+
     try {
-      const freshCards = getCards(deckId);
-      if (freshCards.length > 0) {
-        const newCardData = freshCards.map((card) => ({
-          front: card.word1 || "Front",
-          back: card.word2 || "Back",
-        }));
-        setCardData([...newCardData]);
-      } else {
-        setCardData([]);
-      }
+      const { cards } = loadSession({
+        deskId: deckId,
+        mode: "normal",
+        exercise: "flip",
+        quizDirection: "w1-w2",
+        limit: 50,
+        shuffle: true,
+        hideMastered: false,
+      });
+      // Stack top = last index (matches existing Flip UI)
+      setStack(cards);
+      setTotal(cards.length);
+      totalRef.current = cards.length;
+      emitProgress(cards.length, 0, 0, cards.length);
     } catch (error) {
-      console.error("Load cards error:", error);
-      setCardData([]);
+      console.error("Load flip session error:", error);
+      setStack([]);
+      setTotal(0);
+      totalRef.current = 0;
+      emitProgress(0, 0, 0, 0);
     }
-  }, [deckId]);
+  }, [deckId, emitProgress]);
 
-  const removeCard = (direction: "left" | "right") => {
-    const action =
-      direction === "left" ? "I learned" : "I need to repeat myself";
+  const completeSession = useCallback(() => {
+    if (completedRef.current) return;
+    completedRef.current = true;
 
-    setCardData((prev) => {
+    const durationMs = Math.max(0, Date.now() - startedAtRef.current);
+    const summaryCorrect = correctRef.current;
+    const summaryWrong = wrongRef.current;
+    const summaryTotal = totalRef.current;
+
+    finishSession({
+      deskId: deckId,
+      exercise: "flip",
+      mode: "normal",
+      correct: summaryCorrect,
+      wrong: summaryWrong,
+      total: summaryTotal,
+      points: summaryCorrect * 5,
+      durationMs,
+    });
+
+    setFinished(true);
+    onSessionComplete?.({
+      deskId: deckId,
+      deckTitle,
+      correct: summaryCorrect,
+      wrong: summaryWrong,
+      total: summaryTotal,
+      durationMs,
+    });
+  }, [deckId, deckTitle, onSessionComplete]);
+
+  const rateAndRemove = (direction: FlipSwipeDirection) => {
+    setStack((prev) => {
       if (prev.length === 0) return prev;
-      const cardToRemove = prev[prev.length - 1];
-      console.log(action, "Removed card:", cardToRemove);
-      return prev.slice(0, -1);
+      const card = prev[prev.length - 1];
+      const learning = useLearningStore.getState();
+
+      if (direction === "right") {
+        // Sağ = Doğru / Knew it
+        learning.applyCorrect(card.id);
+        const nextCorrect = correctRef.current + 1;
+        correctRef.current = nextCorrect;
+        setCorrect(nextCorrect);
+        const remaining = prev.length - 1;
+        emitProgress(remaining, nextCorrect, wrongRef.current, totalRef.current);
+      } else {
+        // Sol = Yanlış / Forgot
+        learning.applyWrong(card.id);
+        const nextWrong = wrongRef.current + 1;
+        wrongRef.current = nextWrong;
+        setWrong(nextWrong);
+        const remaining = prev.length - 1;
+        emitProgress(remaining, correctRef.current, nextWrong, totalRef.current);
+      }
+
+      const next = prev.slice(0, -1);
+      if (next.length === 0) {
+        // Defer so state flush finishes before navigate
+        setTimeout(() => completeSession(), 0);
+      }
+      return next;
     });
 
     translateX.value = 0;
@@ -93,20 +207,21 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
       "worklet";
       translateX.value = event.translationX;
     })
-    .onEnd((event) => {
+    .onEnd(() => {
       "worklet";
       const currentTranslateX = translateX.value;
 
       if (Math.abs(currentTranslateX) > SWIPE_THRESHOLD) {
-        const direction = currentTranslateX > 0 ? "right" : "left";
+        const direction: FlipSwipeDirection =
+          currentTranslateX > 0 ? "right" : "left";
         const targetX = direction === "right" ? width : -width;
 
         translateX.value = withTiming(
           targetX,
           { duration: 300 },
-          (finished) => {
-            if (finished) {
-              runOnJS(removeCard)(direction);
+          (finishedAnim) => {
+            if (finishedAnim) {
+              runOnJS(rateAndRemove)(direction);
               runOnJS(setIsGestureActive)(false);
             }
           }
@@ -126,11 +241,19 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
     ],
   }));
 
+  const leftHintStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD, 0], [1, 0], "clamp"),
+  }));
+
+  const rightHintStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [0, SWIPE_THRESHOLD], [0, 1], "clamp"),
+  }));
+
   const frontStyle = useAnimatedStyle(() => {
     const rotateY = interpolate(flipAnimValue.value, [0, 1], [0, 180]);
     return {
       transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
-      backfaceVisibility: "hidden",
+      backfaceVisibility: "hidden" as const,
     };
   });
 
@@ -138,11 +261,24 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
     const rotateY = interpolate(flipAnimValue.value, [0, 1], [180, 360]);
     return {
       transform: [{ perspective: 1000 }, { rotateY: `${rotateY}deg` }],
-      backfaceVisibility: "hidden",
+      backfaceVisibility: "hidden" as const,
     };
   });
 
-  if (cardData.length === 0) {
+  if (finished || (stack.length === 0 && total > 0)) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.noCardsContainer}>
+          <Text style={styles.noCardsText}>Oturum tamamlandı</Text>
+          <Text style={styles.hintSubtext}>
+            {correct} doğru · {wrong} yanlış
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (stack.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.noCardsContainer}>
@@ -154,15 +290,20 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
 
   return (
     <View style={styles.container}>
+      <View style={styles.legendRow}>
+        <Text style={styles.legendLeft}>← Yanlış / Forgot</Text>
+        <Text style={styles.legendRight}>Doğru / Knew it →</Text>
+      </View>
+
       <View style={styles.stackContainer}>
-        {cardData.map((card, index) => {
-          const isTopCard = index === cardData.length - 1;
-          const stackIndex = cardData.length - 1 - index;
+        {stack.map((card, index) => {
+          const isTopCard = index === stack.length - 1;
+          const stackIndex = stack.length - 1 - index;
           const maxVisibleCards = 4;
 
           if (stackIndex >= maxVisibleCards) return null;
 
-          const uniqueKey = `${card.front}-${card.back}-${index}`;
+          const uniqueKey = `${card.id}-${index}`;
 
           return isTopCard ? (
             <GestureDetector key={uniqueKey} gesture={pan}>
@@ -182,6 +323,15 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
                   panStyle,
                 ]}
               >
+                <Animated.View style={[styles.swipeHintLeft, leftHintStyle]}>
+                  <Text style={styles.swipeHintLeftText}>Yanlış</Text>
+                  <Text style={styles.swipeHintLeftSub}>Forgot</Text>
+                </Animated.View>
+                <Animated.View style={[styles.swipeHintRight, rightHintStyle]}>
+                  <Text style={styles.swipeHintRightText}>Doğru</Text>
+                  <Text style={styles.swipeHintRightSub}>Knew it</Text>
+                </Animated.View>
+
                 <View style={{ flex: 1 }}>
                   <Animated.View
                     style={[
@@ -196,7 +346,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
                       onPress={toggleFlip}
                     >
                       <Text style={[styles.cardText, { color: "#1E293B" }]}>
-                        {card.front}
+                        {card.word1}
                       </Text>
                     </TouchableOpacity>
                   </Animated.View>
@@ -213,7 +363,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
                       style={styles.cardContent}
                       onPress={toggleFlip}
                     >
-                      <Text style={styles.cardText}>{card.back}</Text>
+                      <Text style={styles.cardText}>{card.word2}</Text>
                     </TouchableOpacity>
                   </Animated.View>
                 </View>
@@ -238,7 +388,7 @@ const FlipCard: React.FC<FlipCardProps> = ({ deckId }) => {
             >
               <View style={styles.cardContent}>
                 <Text style={[styles.cardText, { color: "#1E293B" }]}>
-                  {card.front}
+                  {card.word1}
                 </Text>
               </View>
             </View>
@@ -272,6 +422,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  legendRow: {
+    width: width * 0.85,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  legendLeft: {
+    fontSize: 12,
+    color: "#DC2626",
+    fontWeight: "600",
+  },
+  legendRight: {
+    fontSize: 12,
+    color: "#16A34A",
+    fontWeight: "600",
+  },
   stackContainer: {
     position: "relative",
     width: width * 0.85,
@@ -301,6 +467,52 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backfaceVisibility: "hidden",
   },
+  swipeHintLeft: {
+    position: "absolute",
+    top: 24,
+    left: 20,
+    zIndex: 20,
+    borderWidth: 3,
+    borderColor: "#DC2626",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    transform: [{ rotate: "-12deg" }],
+  },
+  swipeHintLeftText: {
+    color: "#DC2626",
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  swipeHintLeftSub: {
+    color: "#DC2626",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  swipeHintRight: {
+    position: "absolute",
+    top: 24,
+    right: 20,
+    zIndex: 20,
+    borderWidth: 3,
+    borderColor: "#16A34A",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    transform: [{ rotate: "12deg" }],
+  },
+  swipeHintRightText: {
+    color: "#16A34A",
+    fontWeight: "800",
+    fontSize: 16,
+  },
+  swipeHintRightSub: {
+    color: "#16A34A",
+    fontSize: 11,
+    fontWeight: "600",
+  },
   noCardsContainer: {
     flex: 1,
     justifyContent: "center",
@@ -310,6 +522,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#8B9CB6",
     fontWeight: "600",
+  },
+  hintSubtext: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#94A3B8",
   },
   cardContent: {
     width: "100%",
