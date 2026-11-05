@@ -13,15 +13,12 @@ import {
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../RootStackParams";
+import { formatMinutes } from "../../domain/learning/stats";
 
-/**
- * Minimal Phase 2 session summary. Full StudyResultScreen is Phase 4.
- */
-const FlipSessionResultScreen = () => {
+const StudyResultScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route =
-    useRoute<RouteProp<RootStackParamList, "FlipSessionResult">>();
+  const route = useRoute<RouteProp<RootStackParamList, "StudyResult">>();
   const {
     deskId,
     deckTitle,
@@ -29,20 +26,27 @@ const FlipSessionResultScreen = () => {
     wrong,
     total,
     durationMs,
-    source = "flip",
+    points = correct * 5,
+    mode,
+    exercise,
+    source = exercise === "quiz" ? "quiz" : "flip",
   } = route.params;
 
-  const accuracy =
-    total > 0 ? Math.round((correct / total) * 100) : 0;
+  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const minutesLabel = formatMinutes(Math.max(1, Math.round(durationMs / 60000)));
   const seconds = Math.round(durationMs / 1000);
-  const eyebrow = source === "quiz" ? "Quiz oturumu" : "Flip oturumu";
+  const eyebrow =
+    source === "quiz" || exercise === "quiz" ? "Quiz oturumu" : "Flip oturumu";
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.eyebrow}>{eyebrow}</Text>
         <Text style={styles.title}>{deckTitle}</Text>
-        <Text style={styles.subtitle}>Session complete</Text>
+        <Text style={styles.subtitle}>
+          Session complete
+          {mode ? ` · ${mode}` : ""}
+        </Text>
 
         <View style={styles.stats}>
           <View style={styles.stat}>
@@ -59,27 +63,25 @@ const FlipSessionResultScreen = () => {
           </View>
         </View>
 
-        <Text style={styles.meta}>
-          {total} kart · {seconds}s
-        </Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.meta}>
+            {total} kart · {seconds < 60 ? `${seconds}s` : minutesLabel}
+          </Text>
+          <Text style={styles.points}>+{points} puan</Text>
+        </View>
 
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => {
-            if (source === "quiz") {
-              navigation.replace("LearnScreen", {
-                deckId: deskId,
-                deckTitle,
-              });
-            } else {
-              navigation.replace("FlipCardScreen", {
-                deckId: deskId,
-                deckTitle,
-              });
-            }
-          }}
+          onPress={() =>
+            navigation.replace("StudySetup", {
+              deckId: deskId,
+              deckTitle,
+            })
+          }
         >
-          <Text style={styles.primaryButtonText}>Tekrar / Again</Text>
+          <Text style={styles.primaryButtonText}>
+            Tekrar / Retry → Setup
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -98,13 +100,10 @@ const FlipSessionResultScreen = () => {
   );
 };
 
-export default FlipSessionResultScreen;
+export default StudyResultScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -123,43 +122,26 @@ const styles = StyleSheet.create({
     color: "#1E293B",
     textAlign: "center",
   },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 14,
-    color: "#94A3B8",
-  },
-  stats: {
-    flexDirection: "row",
-    gap: 16,
-    marginTop: 40,
-    marginBottom: 16,
-  },
-  stat: {
-    alignItems: "center",
-    minWidth: 88,
-  },
-  statValue: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#1E293B",
-  },
-  correct: {
-    color: "#16A34A",
-  },
-  wrong: {
-    color: "#DC2626",
-  },
+  subtitle: { marginTop: 4, fontSize: 14, color: "#94A3B8" },
+  stats: { flexDirection: "row", gap: 16, marginTop: 40, marginBottom: 16 },
+  stat: { alignItems: "center", minWidth: 88 },
+  statValue: { fontSize: 32, fontWeight: "800", color: "#1E293B" },
+  correct: { color: "#16A34A" },
+  wrong: { color: "#DC2626" },
   statLabel: {
     marginTop: 6,
     fontSize: 12,
     color: "#64748B",
     textAlign: "center",
   },
-  meta: {
-    fontSize: 14,
-    color: "#94A3B8",
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     marginBottom: 40,
   },
+  meta: { fontSize: 14, color: "#94A3B8" },
+  points: { fontSize: 14, fontWeight: "700", color: "#4f42d8" },
   primaryButton: {
     width: "100%",
     backgroundColor: "#4f42d8",
@@ -168,11 +150,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  primaryButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
+  primaryButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
   secondaryButton: {
     width: "100%",
     paddingVertical: 16,

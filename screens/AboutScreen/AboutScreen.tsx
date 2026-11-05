@@ -40,10 +40,10 @@ const AboutApp = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About</Text>
             <Text style={styles.description}>
-              Word Lingo is an innovative flashcard app designed to help you
-              expand your vocabulary in a fun and effective way. Perfect for
-              language learners and exam preparers, our app combines
-              science-backed techniques with intuitive design.
+              Word Lingo helps you build vocabulary with custom decks, flip
+              practice, and multiple-choice quizzes. Progress uses a simple
+              level ladder (0–3) plus wrong / forgotten / hard review queues —
+              not a classical Anki SM-2 spaced-repetition schedule.
             </Text>
           </View>
 
@@ -56,11 +56,15 @@ const AboutApp = () => {
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="stats-chart" size={20} color="#2F80ED" />
-              <Text style={styles.featureText}>Track learning progress</Text>
+              <Text style={styles.featureText}>
+                Track levels, streak, and study time
+              </Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="repeat" size={20} color="#2F80ED" />
-              <Text style={styles.featureText}>Smart spaced repetition</Text>
+              <Text style={styles.featureText}>
+                Level ladder + wrong / forgotten / hard queues
+              </Text>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name="globe" size={20} color="#2F80ED" />
