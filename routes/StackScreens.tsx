@@ -15,7 +15,8 @@ import FaceId from "../screens/FaceIdScreen/FaceIdScreen";
 import HelpAndSupport from "../screens/HelpSupportScreen/HelpSupportScreen";
 import AboutApp from "../screens/AboutScreen/AboutScreen";
 import FlipCardScreen from "../screens/FlipCardScreen/FlipCardScreen";
-import FlipSessionResultScreen from "../screens/FlipCardScreen/FlipSessionResultScreen";
+import StudySetupScreen from "../screens/StudySetupScreen/StudySetupScreen";
+import StudyResultScreen from "../screens/StudyResultScreen/StudyResultScreen";
 import LearnScreen from "../screens/LearnMode/LearnScreen";
 import CreateCard from "../screens/CreateCardScreen/CreateCardScreen";
 import SplashScreen from "../screens/SplashScreen/SplashScreen";
@@ -101,11 +102,9 @@ function StackScreens() {
       <Stack.Screen name="FaceId" component={FaceId} />
       <Stack.Screen name="HelpAndSupport" component={HelpAndSupport} />
       <Stack.Screen name="AboutApp" component={AboutApp} />
+      <Stack.Screen name="StudySetup" component={StudySetupScreen} />
       <Stack.Screen name="FlipCardScreen" component={FlipCardScreen} />
-      <Stack.Screen
-        name="FlipSessionResult"
-        component={FlipSessionResultScreen}
-      />
+      <Stack.Screen name="StudyResult" component={StudyResultScreen} />
       <Stack.Screen name="LearnScreen" component={LearnScreen} />
       <Stack.Screen name="CreateCard" component={CreateCard} />
     </Stack.Navigator>

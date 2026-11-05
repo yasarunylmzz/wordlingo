@@ -25,8 +25,13 @@ const FlipCardScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "FlipCardScreen">>();
 
-  const deckId = route.params.deckId;
-  const deckTitle = route.params.deckTitle;
+  const {
+    deckId,
+    deckTitle,
+    mode = "normal",
+    shuffle = true,
+    hideMastered = false,
+  } = route.params;
 
   const [progress, setProgress] = useState<FlipSessionProgress>({
     remaining: 0,
@@ -41,13 +46,17 @@ const FlipCardScreen = () => {
 
   const handleSessionComplete = useCallback(
     (payload: FlipSessionCompletePayload) => {
-      navigation.replace("FlipSessionResult", {
+      navigation.replace("StudyResult", {
         deskId: payload.deskId,
         deckTitle: payload.deckTitle,
         correct: payload.correct,
         wrong: payload.wrong,
         total: payload.total,
         durationMs: payload.durationMs,
+        points: payload.points,
+        mode: payload.mode,
+        exercise: "flip",
+        source: "flip",
       });
     },
     [navigation]
@@ -89,6 +98,9 @@ const FlipCardScreen = () => {
           <FlipCard
             deckId={deckId}
             deckTitle={deckTitle}
+            mode={mode}
+            shuffle={shuffle}
+            hideMastered={hideMastered}
             onProgress={handleProgress}
             onSessionComplete={handleSessionComplete}
           />

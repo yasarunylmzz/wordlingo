@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useAuthStore } from "../../stores/userStore";
 import { useCardStore } from "../../stores/cardStore";
+import { useLearningStore } from "../../stores/learningStore";
 import ProfileHeader from "./components/ProfileHeader";
 import LogoutButton from "./components/LogoutButton";
 
@@ -21,6 +22,7 @@ const ProfileScreen = ({ navigation }: any) => {
   const email = useAuthStore((state) => state.user.email);
 
   const cards = useCardStore((state) => state.cards);
+  const byCardId = useLearningStore((state) => state.byCardId);
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
 
@@ -39,6 +41,9 @@ const ProfileScreen = ({ navigation }: any) => {
     (total, deckCards) => total + deckCards.length,
     0
   );
+  const learnedCount = Object.values(byCardId).filter(
+    (state) => state.learningLevel === 3
+  ).length;
 
   const StatsComponent = () => (
     <View style={styles.statsContainer}>
@@ -53,7 +58,7 @@ const ProfileScreen = ({ navigation }: any) => {
           <Text style={styles.statLabel}>Cards</Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
+          <Text style={styles.statNumber}>{learnedCount}</Text>
           <Text style={styles.statLabel}>Learned</Text>
         </View>
       </View>

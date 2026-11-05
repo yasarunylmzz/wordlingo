@@ -7,7 +7,7 @@ import {
   StyleSheet,
   StatusBar,
 } from "react-native";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   RouteProp,
   useNavigation,
@@ -47,12 +47,21 @@ const LearnScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, "LearnScreen">>();
-  const deckId = route.params.deckId;
-  const deckTitle = route.params.deckTitle;
+  const {
+    deckId,
+    deckTitle,
+    mode: routeMode = "normal",
+    shuffle: routeShuffle = true,
+    hideMastered: routeHideMastered = false,
+    quizDirection: routeDirection = "w1-w2",
+    autoStart = false,
+  } = route.params;
 
   const [phase, setPhase] = useState<ScreenPhase>("setup");
-  const [mode, setMode] = useState<StudyMode>("normal");
-  const [direction, setDirection] = useState<QuizDirection>("w1-w2");
+  const [mode, setMode] = useState<StudyMode>(routeMode);
+  const [direction, setDirection] = useState<QuizDirection>(routeDirection);
+  const [shuffle] = useState(routeShuffle);
+  const [hideMastered] = useState(routeHideMastered);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [emptyReason, setEmptyReason] = useState("");
 
@@ -66,6 +75,7 @@ const LearnScreen = () => {
   const correctRef = useRef(0);
   const wrongRef = useRef(0);
   const finishedRef = useRef(false);
+  const didAutoStart = useRef(false);
 
   const deskCardCount = useCardStore(
     (state) => state.getCards(deckId).length
@@ -86,10 +96,10 @@ const LearnScreen = () => {
       exercise: "quiz",
       quizDirection: direction,
       limit: 20,
-      shuffle: true,
-      hideMastered: false,
+      shuffle,
+      hideMastered,
     };
-  }, [deckId, mode, direction]);
+  }, [deckId, mode, direction, shuffle, hideMastered]);
 
   const startQuiz = useCallback(() => {
     finishedRef.current = false;
@@ -147,6 +157,12 @@ const LearnScreen = () => {
     setPhase("quiz");
   }, [buildConfig, deckId, direction, mode]);
 
+  useEffect(() => {
+    if (!autoStart || didAutoStart.current) return;
+    didAutoStart.current = true;
+    startQuiz();
+  }, [autoStart, startQuiz]);
+
   const completeQuiz = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
@@ -155,6 +171,7 @@ const LearnScreen = () => {
     const correct = correctRef.current;
     const wrong = wrongRef.current;
     const total = questions.length;
+    const points = correct * 5;
 
     finishSession({
       deskId: deckId,
@@ -163,21 +180,23 @@ const LearnScreen = () => {
       correct,
       wrong,
       total,
-      points: correct * 5,
+      points,
       durationMs,
     });
 
-    navigation.replace("FlipSessionResult", {
+    navigation.replace("StudyResult", {
       deskId: deckId,
       deckTitle,
       correct,
       wrong,
       total,
       durationMs,
+      points,
+      mode,
+      exercise: "quiz",
       source: "quiz",
     });
   }, [deckId, deckTitle, mode, navigation, questions.length]);
-
   const checkAnswer = () => {
     if (selectedAnswer === null || answerChecked) return;
     const question = questions[currentQuestion];
@@ -249,6 +268,17 @@ const LearnScreen = () => {
   );
 
   if (phase === "setup") {
+    if (autoStart) {
+      return (
+        <SafeAreaView style={styles.container}>
+          {header}
+          <View style={styles.scrollContainer}>
+            <Text style={styles.setupHint}>Quiz hazırlanıyor…</Text>
+          </View>
+        </SafeAreaView>
+      );
+    }
+
     return (
       <SafeAreaView style={styles.container}>
         {header}

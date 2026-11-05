@@ -16,7 +16,7 @@ import Animated, {
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { loadSession, finishSession } from "../../../services/studySessionService";
 import { useLearningStore } from "../../../stores/learningStore";
-import type { StudyCard } from "../../../domain/learning/types";
+import type { StudyCard, StudyMode } from "../../../domain/learning/types";
 
 const { width, height } = Dimensions.get("window");
 
@@ -37,11 +37,16 @@ export type FlipSessionCompletePayload = {
   wrong: number;
   total: number;
   durationMs: number;
+  points: number;
+  mode: StudyMode;
 };
 
 interface FlipCardProps {
   deckId: string;
   deckTitle: string;
+  mode?: StudyMode;
+  shuffle?: boolean;
+  hideMastered?: boolean;
   onProgress?: (progress: FlipSessionProgress) => void;
   onSessionComplete?: (payload: FlipSessionCompletePayload) => void;
 }
@@ -49,6 +54,9 @@ interface FlipCardProps {
 const FlipCard: React.FC<FlipCardProps> = ({
   deckId,
   deckTitle,
+  mode = "normal",
+  shuffle = true,
+  hideMastered = false,
   onProgress,
   onSessionComplete,
 }) => {
@@ -98,12 +106,12 @@ const FlipCard: React.FC<FlipCardProps> = ({
     try {
       const { cards } = loadSession({
         deskId: deckId,
-        mode: "normal",
+        mode,
         exercise: "flip",
         quizDirection: "w1-w2",
         limit: 50,
-        shuffle: true,
-        hideMastered: false,
+        shuffle,
+        hideMastered,
       });
       // Stack top = last index (matches existing Flip UI)
       setStack(cards);
@@ -117,7 +125,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
       totalRef.current = 0;
       emitProgress(0, 0, 0, 0);
     }
-  }, [deckId, emitProgress]);
+  }, [deckId, emitProgress, hideMastered, mode, shuffle]);
 
   const completeSession = useCallback(() => {
     if (completedRef.current) return;
@@ -127,15 +135,16 @@ const FlipCard: React.FC<FlipCardProps> = ({
     const summaryCorrect = correctRef.current;
     const summaryWrong = wrongRef.current;
     const summaryTotal = totalRef.current;
+    const points = summaryCorrect * 5;
 
     finishSession({
       deskId: deckId,
       exercise: "flip",
-      mode: "normal",
+      mode,
       correct: summaryCorrect,
       wrong: summaryWrong,
       total: summaryTotal,
-      points: summaryCorrect * 5,
+      points,
       durationMs,
     });
 
@@ -147,8 +156,10 @@ const FlipCard: React.FC<FlipCardProps> = ({
       wrong: summaryWrong,
       total: summaryTotal,
       durationMs,
+      points,
+      mode,
     });
-  }, [deckId, deckTitle, onSessionComplete]);
+  }, [deckId, deckTitle, mode, onSessionComplete]);
 
   const rateAndRemove = (direction: FlipSwipeDirection) => {
     setStack((prev) => {

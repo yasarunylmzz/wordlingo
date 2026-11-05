@@ -1,3 +1,19 @@
+import type {
+  QuizDirection,
+  StudyExercise,
+  StudyMode,
+} from "../domain/learning/types";
+
+/** Session options passed from StudySetup into Flip / Learn. */
+export type StudyRouteOptions = {
+  mode?: StudyMode;
+  shuffle?: boolean;
+  hideMastered?: boolean;
+  quizDirection?: QuizDirection;
+  /** When true, LearnScreen skips its own setup chips and starts immediately. */
+  autoStart?: boolean;
+};
+
 export type RootStackParamList = {
   // Boot / auth gate
   SplashScreen: undefined;
@@ -20,19 +36,27 @@ export type RootStackParamList = {
   FaceId: undefined;
   HelpAndSupport: undefined;
   AboutApp: undefined;
-  FlipCardScreen: { deckId: string; deckTitle: string };
-  /** Minimal session summary (full StudyResult is Phase 4). */
-  FlipSessionResult: {
+  StudySetup: { deckId: string; deckTitle: string };
+  FlipCardScreen: {
+    deckId: string;
+    deckTitle: string;
+  } & StudyRouteOptions;
+  LearnScreen: {
+    deckId: string;
+    deckTitle: string;
+  } & StudyRouteOptions;
+  StudyResult: {
     deskId: string;
     deckTitle: string;
     correct: number;
     wrong: number;
     total: number;
     durationMs: number;
-    /** Where “Tekrar” should return; defaults to flip. */
+    points?: number;
+    mode?: StudyMode;
+    exercise?: StudyExercise;
     source?: "flip" | "quiz";
   };
-  LearnScreen: { deckId: string; deckTitle: string };
   CreateCard: undefined;
 
   // Referenced by Home header; screen not registered yet
