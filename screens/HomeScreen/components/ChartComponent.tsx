@@ -1,97 +1,111 @@
-import React from "react";
-import { View, Text, Dimensions, StyleSheet } from "react-native";
-import { LineChart } from "react-native-gifted-charts";
+import React, { useMemo, useState } from "react";
+import { View, StyleSheet, Pressable } from "react-native";
+import AppText from "../../../Components/ui/AppText";
+import { colors, radii, space } from "../../../theme/theme";
 
-const ChartComponent = ({ data, dates }: { data: any; dates: any }) => {
-  const screenWidth = Dimensions.get("window").width;
-  const screenHeight = Dimensions.get("window").height;
+const CHART_H = 132;
 
-  // Calculate some statistics
+function lastSevenDays() {
+  const fmt = new Intl.DateTimeFormat("tr-TR", { weekday: "short" });
+  const today = new Date();
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - (6 - i));
+    return fmt.format(d).replace(".", "");
+  });
+}
+
+const ChartComponent = ({
+  data,
+}: {
+  data: { value: number }[];
+  dates?: string[];
+}) => {
   const values = data.map((item) => item.value);
-  const maxValue = Math.max(...values);
-  const avgValue = Math.round(
-    values.reduce((sum, value) => sum + value, 0) / values.length
-  );
+  const days = useMemo(lastSevenDays, []);
+  const [selected, setSelected] = useState(6);
+
+  const max = Math.max(...values, 1);
+  const total = values.reduce((a, b) => a + b, 0);
+  const avg = Math.round(total / values.length);
+  const scale = (v: number) => (v / max) * CHART_H;
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Weekly Activity</Text>
+      <View style={styles.headerRow}>
+        <View>
+          <AppText style={styles.headerTitle}>Son 7 gün</AppText>
+          <AppText weight="semibold" style={styles.bigStat}>
+            {values[selected]}
+            <AppText weight="medium" style={styles.bigStatUnit}>
+              {" "}
+              kart · {selected === 6 ? "bugün" : days[selected]}
+            </AppText>
+          </AppText>
+        </View>
+        <View style={styles.rightStats}>
+          <AppText style={styles.sideStat}>
+            Ortalama{" "}
+            <AppText weight="medium" style={styles.sideStatInk}>
+              {avg}
+            </AppText>
+          </AppText>
+          <AppText style={styles.sideStat}>
+            En yüksek{" "}
+            <AppText weight="medium" style={styles.sideStatInk}>
+              {max}
+            </AppText>
+          </AppText>
+        </View>
       </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{avgValue}</Text>
-          <Text style={styles.statLabel}>Daily Average</Text>
+      <View style={[styles.chartArea, { height: CHART_H }]}>
+        <View
+          pointerEvents="none"
+          style={[styles.avgLine, { bottom: scale(avg) }]}
+        >
+          <AppText weight="mono" style={styles.avgLabel}>
+            ort
+          </AppText>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statValue}>{maxValue}</Text>
-          <Text style={styles.statLabel}>Highest</Text>
+        <View style={styles.barsRow}>
+          {values.map((v, i) => {
+            const active = i === selected;
+            return (
+              <Pressable
+                key={i}
+                accessibilityLabel={`${days[i]}: ${v} kart`}
+                onPress={() => setSelected(i)}
+                style={styles.barHit}
+              >
+                <View
+                  style={[
+                    styles.bar,
+                    {
+                      height: Math.max(scale(v), 4),
+                      backgroundColor: active ? colors.accent : colors.bar,
+                    },
+                  ]}
+                />
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
-      <View style={styles.chartArea}>
-        <LineChart
-          width={screenWidth - 64}
-          height={screenHeight * 0.12}
-          data={data}
-          areaChart
-          backgroundColor={"transparent"}
-          dataPointsColor="#6A5ACD"
-          rulesColor={"#f0f0f5"}
-          rulesType="solid"
-          xAxisThickness={1}
-          xAxisColor="#e5e7eb"
-          showXAxisIndices={true}
-          xAxisIndicesHeight={3}
-          xAxisIndicesColor="#e5e7eb"
-          yAxisThickness={0}
-          hideYAxisText={true}
-          xAxisLabelTexts={dates}
-          disableScroll={true}
-          xAxisLabelTextStyle={{
-            fontSize: 11,
-            color: "#6b7280",
-            fontWeight: "500",
-            textAlign: "center",
-            marginTop: 5,
-          }}
-          color1="#6A5ACD"
-          thickness1={3}
-          curved={true}
-          dataPointsRadius={5}
-          startFillColor="#f0eeff"
-          endFillColor="#f9f9fc"
-          startOpacity={0.6}
-          endOpacity={0.1}
-          noOfSections={4}
-          pointerConfig={{
-            height: 12,
-            width: 12,
-            pointerColor: "#6A5ACD",
-            pointerStripHeight: 130,
-            pointerStripWidth: 1,
-            pointerStripColor: "rgba(106, 90, 205, 0.3)",
-            showPointerStrip: true,
-            pointerStripUptoDataPoint: true,
-            pointerLabelComponent: (props: any) => {
-              // Check if data exists and has a valid value
-              const displayValue =
-                props.data?.value !== undefined ? props.data.value : "—";
-              return (
-                <View style={styles.tooltipContainer}>
-                  <Text style={styles.tooltipValue}>{displayValue}</Text>
-                </View>
-              );
-            },
-            pointerLabelWidth: 55,
-            pointerLabelHeight: 30,
-            shiftPointerLabelY: -45,
-            pointerVanishDelay: 500,
-            autoAdjustPointerLabelPosition: true,
-          }}
-        />
+      <View style={styles.daysRow}>
+        {days.map((d, i) => (
+          <AppText
+            key={i}
+            weight={i === selected ? "semibold" : "regular"}
+            style={[
+              styles.dayLabel,
+              { color: i === selected ? colors.accent : colors.muted },
+            ]}
+          >
+            {d}
+          </AppText>
+        ))}
       </View>
     </View>
   );
@@ -99,77 +113,88 @@ const ChartComponent = ({ data, dates }: { data: any; dates: any }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    paddingHorizontal: 4,
   },
-
-  headerContainer: {
-    marginBottom: 14,
-    padding: 16,
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#111827",
+    fontSize: 13,
+    color: colors.muted,
   },
-  statsContainer: {
-    flexDirection: "row",
-    backgroundColor: "#fff",
-    padding: 8,
-    marginBottom: 8,
-    alignItems: "center",
+  bigStat: {
+    marginTop: 4,
+    fontSize: 34,
+    lineHeight: 34,
+    letterSpacing: -1.19,
+    fontVariant: ["tabular-nums"],
   },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
+  bigStatUnit: {
+    fontSize: 15,
+    letterSpacing: 0,
+    color: colors.muted,
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#6A5ACD",
-    marginBottom: 4,
+  rightStats: {
+    alignItems: "flex-end",
   },
-  statLabel: {
+  sideStat: {
     fontSize: 12,
-    color: "#6b7280",
-    fontWeight: "500",
+    lineHeight: 18,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
   },
-  statDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: "#e5e7eb",
+  sideStatInk: {
+    fontSize: 12,
+    color: colors.ink,
   },
   chartArea: {
-    justifyContent: "center",
-    alignItems: "center",
+    marginTop: 24,
+    position: "relative",
+  },
+  avgLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderStyle: "dashed",
+    borderColor: "rgba(22,21,29,0.25)",
+  },
+  avgLabel: {
+    position: "absolute",
+    right: 0,
+    top: -10,
+    backgroundColor: colors.paper,
+    paddingLeft: 6,
+    fontSize: 10,
+    color: colors.muted,
+  },
+  barsRow: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  barHit: {
+    flex: 1,
+    height: "100%",
+    justifyContent: "flex-end",
+  },
+  bar: {
     width: "100%",
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    overflow: "hidden",
-    paddingTop: 10,
-    paddingBottom: 5,
+    borderRadius: radii.sm,
   },
-  tooltipContainer: {
-    backgroundColor: "#6A5ACD",
-    padding: 6,
-    borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
+  daysRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 8,
   },
-  tooltipValue: {
-    color: "#ffffff",
-    fontWeight: "bold",
-    fontSize: 13,
+  dayLabel: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 11,
+    textTransform: "capitalize",
   },
 });
 

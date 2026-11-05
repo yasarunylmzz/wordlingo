@@ -1,11 +1,6 @@
 import React, { useCallback, useState } from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Pressable, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   RouteProp,
@@ -13,12 +8,14 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import LeftArrow from "../../svg/LeftArrow";
+import { X } from "lucide-react-native";
 import FlipCard, {
   FlipSessionCompletePayload,
   FlipSessionProgress,
 } from "./Components/FlipCard";
 import { RootStackParamList } from "../RootStackParams";
+import AppText from "../../Components/ui/AppText";
+import { colors, fonts, radii, space } from "../../theme/theme";
 
 const FlipCardScreen = () => {
   const navigation =
@@ -59,38 +56,50 @@ const FlipCardScreen = () => {
         source: "flip",
       });
     },
-    [navigation]
+    [navigation],
   );
 
+  const doneCount = progress.total - progress.remaining;
   const progressRatio =
-    progress.total > 0
-      ? (progress.total - progress.remaining) / progress.total
-      : 0;
+    progress.total > 0 ? doneCount / progress.total : 0;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
         <View style={styles.topBar}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <LeftArrow />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>{deckTitle}</Text>
-            <Text style={styles.subtitle}>
-              {progress.remaining}/{progress.total} remaining ·{" "}
-              {progress.correct} doğru · {progress.wrong} yanlış
-            </Text>
-            <View style={styles.progressBarContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  { width: `${Math.min(100, progressRatio * 100)}%` },
-                ]}
-              />
+          <View style={styles.topRow}>
+            <Pressable
+              accessibilityLabel="Oturumu bitir"
+              onPress={() => navigation.goBack()}
+              style={({ pressed }) => [
+                styles.closeBtn,
+                pressed && { transform: [{ scale: 0.95 }] },
+              ]}
+            >
+              <X size={18} color={colors.ink} strokeWidth={2} />
+            </Pressable>
+            <View style={styles.headerContent}>
+              <AppText weight="semibold" style={styles.title} numberOfLines={1}>
+                {deckTitle}
+              </AppText>
+              <AppText style={styles.subtitle}>
+                <AppText style={styles.correct}>{progress.correct} doğru</AppText>
+                {" · "}
+                <AppText style={styles.wrong}>{progress.wrong} yanlış</AppText>
+              </AppText>
             </View>
+            <AppText weight="mono" style={styles.counter}>
+              {Math.min(doneCount + (progress.remaining > 0 ? 1 : 0), progress.total)}
+              /{progress.total}
+            </AppText>
+          </View>
+          <View style={styles.progressBarContainer}>
+            <View
+              style={[
+                styles.progressBar,
+                { width: `${Math.min(100, progressRatio * 100)}%` },
+              ]}
+            />
           </View>
         </View>
 
@@ -115,48 +124,72 @@ export default FlipCardScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: colors.paper,
   },
   topBar: {
+    paddingHorizontal: space[4],
+    paddingTop: 8,
+  },
+  topRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 10,
+    gap: 12,
   },
-  backButton: {
-    padding: 10,
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerContent: {
     flex: 1,
-    marginHorizontal: 10,
+    minWidth: 0,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#2D2D2D",
+    fontSize: 17,
+    letterSpacing: -0.255,
   },
   subtitle: {
+    fontSize: 12,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
+  },
+  correct: {
+    fontSize: 12,
+    color: colors.correct,
+    fontFamily: fonts.regular,
+  },
+  wrong: {
+    fontSize: 12,
+    color: colors.wrong,
+    fontFamily: fonts.regular,
+  },
+  counter: {
     fontSize: 13,
-    color: "#888",
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
   },
   progressBarContainer: {
-    width: "90%",
-    height: 6,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 3,
-    marginTop: 4,
+    marginTop: 12,
+    height: 4,
+    backgroundColor: "rgba(222,219,238,0.7)",
+    borderRadius: radii.full,
     overflow: "hidden",
   },
   progressBar: {
     height: "100%",
-    backgroundColor: "#4CAF50",
-    borderRadius: 3,
+    backgroundColor: colors.accent,
+    borderRadius: radii.full,
   },
   cardContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
 });

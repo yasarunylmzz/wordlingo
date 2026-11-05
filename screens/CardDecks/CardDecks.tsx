@@ -1,34 +1,29 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
-  SafeAreaView,
   StyleSheet,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { RouteProp, useRoute } from "@react-navigation/native";
 
 import Header from "./Components/Header";
 import BottomButton from "./Components/BottomButton";
 import CardList from "./Components/CardList";
-import CustomButton from "./Components/CustomButton";
 import CardModal from "./Components/CardModal";
 import { useCardOperations } from "./hooks/useCardOperations";
 import { getCardList } from "../../services/cardService";
 import { useCardStore } from "../../stores/cardStore";
 import { RootStackParamList } from "../RootStackParams";
+import { colors } from "../../theme/theme";
 
 const CardDecks: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "CardDecks">>();
   const { deckId, deckTitle } = route.params;
-
   const [loading, setLoading] = useState(false);
 
-  // Zustand store'dan card işlemlerini al
-  const {
-    cards: storeCards,
-    setCards: setStoreCards,
-    getCards,
-  } = useCardStore();
+  const { setCards: setStoreCards, getCards } = useCardStore();
   const currentCards = getCards(deckId);
 
   const {
@@ -62,18 +57,14 @@ const CardDecks: React.FC = () => {
         word2: card.Language2,
         importanceLevel: numberToImportanceValue(card.ImportanceValue),
       }));
-
-      // Store'a kaydet
       setStoreCards(deckId, convertedCards);
-
-      // Local hook'a da kaydet (eski yapı ile uyumluluk için)
       setCards(
         rawCards.map((card: any) => ({
           ID: card.ID,
           Language1: card.Language1,
           Language2: card.Language2,
           ImportanceValue: numberToImportanceValue(card.ImportanceValue),
-        }))
+        })),
       );
     } catch (error) {
       console.error("Error fetching cards:", error);
@@ -83,44 +74,61 @@ const CardDecks: React.FC = () => {
   };
 
   useEffect(() => {
-    // Eğer store'da cart yoksa API'den çek
     if (currentCards.length === 0) {
       fetchCards();
     } else {
-      // Store'dan gelen kartları local hook'a aktar
       setCards(
         currentCards.map((card) => ({
           ID: card.id,
           Language1: card.word1,
           Language2: card.word2,
           ImportanceValue: card.importanceLevel,
-        }))
+        })),
       );
     }
   }, [deckId]);
 
+  const mapped = cards.map((card) => ({
+    id: card.ID,
+    word1: card.Language1,
+    word2: card.Language2,
+    importanceLevel: card.ImportanceValue,
+  }));
+
   return (
-    <SafeAreaView style={styles.container}>
-      <Header title={deckTitle} />
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <Header
+        title={deckTitle}
+        subtitle={`${mapped.length} kart`}
+      />
 
       {loading ? (
-        <ActivityIndicator size="large" color="#007AFF" style={{ flex: 1 }} />
-      ) : (
-        <CardList
-          cards={cards.map((card) => ({
-            id: card.ID,
-            word1: card.Language1,
-            word2: card.Language2,
-            importanceLevel: card.ImportanceValue,
-          }))}
-          onDeleteCard={handleDeleteCard}
-          onEditCard={handleEditCard}
+        <ActivityIndicator
+          size="large"
+          color={colors.accent}
+          style={{ flex: 1 }}
         />
+      ) : (
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: 120 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <CardList
+            cards={mapped}
+            onDeleteCard={handleDeleteCard}
+            onEditCard={handleEditCard}
+          />
+        </ScrollView>
       )}
 
-      <View style={styles.bottomButton}>
-        <BottomButton deckId={deckId} deckTitle={deckTitle} />
-        <CustomButton onPress={openAddModal} />
+      <View style={styles.footer}>
+        <BottomButton
+          deckId={deckId}
+          deckTitle={deckTitle}
+          cardCount={mapped.length}
+          onAdd={openAddModal}
+        />
       </View>
 
       <CardModal
@@ -142,17 +150,15 @@ const CardDecks: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
-    display: "flex",
-    alignItems: "center",
+    backgroundColor: colors.paper,
   },
-  bottomButton: {
-    display: "flex",
-    position: "absolute",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    bottom: 50,
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
+    borderTopColor: colors.line,
+    backgroundColor: "rgba(245,245,248,0.9)",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
   },
 });
 

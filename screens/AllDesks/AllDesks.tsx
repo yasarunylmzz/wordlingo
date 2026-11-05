@@ -1,34 +1,30 @@
 import React, { useRef } from "react";
 import {
   View,
-  Text,
   ScrollView,
-  TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
   RefreshControl,
+  Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
+import { Plus } from "lucide-react-native";
 import { useDecks } from "./hooks/useDecks";
 import DeckCard from "./components/DeckCard";
-import DeckHeader from "./components/DeckHeader";
+import AppText from "../../Components/ui/AppText";
+import { colors, radii, space } from "../../theme/theme";
 
 const AllDesks = () => {
   const { deskList, refreshing, isDeleting, onRefresh, deleteDeck } =
     useDecks();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
+  const swipeableRowRefs = useRef<Record<string, any>>({});
 
-  // Açık olan swipeable'ları izlemek için ref
-  const swipeableRowRefs = useRef({});
-
-  // Swipeable ref'ini ayarla
-  const setSwipeableRef = (id, ref) => {
+  const setSwipeableRef = (id: string, ref: any) => {
     swipeableRowRefs.current[id] = ref;
   };
 
-  // Diğer açık swipeable'ları kapat
-  const closeOtherSwipeables = (key) => {
+  const closeOtherSwipeables = (key: string) => {
     Object.keys(swipeableRowRefs.current).forEach((k) => {
       if (k !== key && swipeableRowRefs.current[k]) {
         swipeableRowRefs.current[k].close();
@@ -36,37 +32,61 @@ const AllDesks = () => {
     });
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+  const totalCards = (deskList || []).reduce(
+    (a: number, d: any) => a + (d.cardCount ?? d.CardCount ?? 0),
+    0,
+  );
 
-      <DeckHeader
-        title="Decks"
-        onAddPress={() => navigation.navigate("CreateDeck")}
-      />
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <View>
+          <AppText weight="semibold" style={styles.headerTitle}>
+            Desteler
+          </AppText>
+          <AppText style={styles.subtitle}>
+            {(deskList || []).length} deste · {totalCards} kart
+          </AppText>
+        </View>
+        <Pressable
+          accessibilityLabel="Yeni deste"
+          onPress={() => navigation.navigate("CreateDeck")}
+          style={({ pressed }) => [
+            styles.addButton,
+            pressed && { transform: [{ scale: 0.95 }] },
+          ]}
+        >
+          <Plus size={20} color={colors.white} strokeWidth={2.25} />
+        </Pressable>
+      </View>
 
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         onScrollBeginDrag={() => {
           Object.keys(swipeableRowRefs.current).forEach((k) => {
-            if (swipeableRowRefs.current[k]) {
-              swipeableRowRefs.current[k].close();
-            }
+            swipeableRowRefs.current[k]?.close();
           });
         }}
       >
         {!deskList || deskList.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text>Gösterilecek kart yok.</Text>
+            <AppText weight="semibold" style={styles.emptyTitle}>
+              Henüz desten yok
+            </AppText>
+            <AppText style={styles.emptyText}>
+              İlk desteni oluşturarak başla.
+            </AppText>
           </View>
         ) : (
-          deskList.map((deck, index) => (
-            <View key={deck.ID} style={styles.deckContainer}>
+          <View style={styles.list}>
+            {deskList.map((deck: any, index: number) => (
               <DeckCard
+                key={deck.ID}
                 deck={deck}
                 index={index}
                 onDelete={deleteDeck}
@@ -74,147 +94,67 @@ const AllDesks = () => {
                 setSwipeableRef={setSwipeableRef}
                 closeOtherSwipeables={closeOtherSwipeables}
               />
-            </View>
-          ))
+            ))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-export const styles = StyleSheet.create({
-  // Ana konteyner
+const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.paper,
   },
-
-  // Header
   header: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
     justifyContent: "space-between",
-    paddingHorizontal: 8,
-    paddingVertical: 16,
-    paddingBottom: 8,
-    backgroundColor: "#f8fafc",
+    paddingHorizontal: space[5],
+    paddingTop: space[3],
   },
   headerTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#6A5ACD",
-    flex: 1,
-    marginLeft: 20,
+    fontSize: 30,
+    lineHeight: 30,
+    letterSpacing: -1.05,
+  },
+  subtitle: {
+    marginTop: 8,
+    fontSize: 13,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
   },
   addButton: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },
-
-  // Scroll
-  scrollView: {
-    flex: 1,
+  scrollView: { flex: 1 },
+  scrollContent: {
+    paddingHorizontal: space[4],
+    paddingTop: 24,
+    paddingBottom: 120,
   },
-
-  // Deck konteyner
-  deckContainer: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+  list: {
+    borderRadius: radii["2xl"],
+    backgroundColor: colors.white,
+    overflow: "hidden",
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingTop: 100,
-  },
-
-  // Deck kart
-  deckCardContainer: {
-    marginVertical: 6,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 6,
-  },
-  deckCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    flexDirection: "row",
-    overflow: "hidden",
-    borderLeftWidth: 5,
-    borderLeftColor: "#6A5ACD",
-  },
-  deckIconContainer: {
-    padding: 16,
-    justifyContent: "center",
+    marginTop: 64,
     alignItems: "center",
   },
-  deckIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#6A5ACD",
-    justifyContent: "center",
-    alignItems: "center",
+  emptyTitle: {
+    fontSize: 16,
   },
-  deckContent: {
-    flex: 1,
-    padding: 16,
-    paddingLeft: 0,
-    justifyContent: "center",
-  },
-  deckTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0d141c",
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  deckDescription: {
+  emptyText: {
+    marginTop: 4,
     fontSize: 14,
-    color: "#49709c",
-    lineHeight: 18,
-  },
-  deckMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  cardCountContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  cardCountText: {
-    fontSize: 13,
-    color: "#49709c",
-    marginLeft: 4,
-  },
-  dateText: {
-    fontSize: 12,
-    color: "#718096",
-  },
-
-  // Swipeable styles
-  deleteAction: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FF3B30",
-    marginVertical: 6,
-    marginRight: 16,
-    borderRadius: 16,
-  },
-  deleteButton: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
-    height: "100%",
+    color: colors.muted,
   },
 });
 

@@ -1,349 +1,466 @@
 import {
   View,
   StyleSheet,
-  Text,
+  Pressable,
+  TextInput,
+  ScrollView,
   ActivityIndicator,
-  FlatList,
-  TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TextInput } from "react-native-paper";
+import {
+  ArrowRight,
+  LoaderCircle,
+  Search,
+  Volume2,
+  X,
+} from "lucide-react-native";
 import { fetchWordDefinition } from "../../api/dictionaryAPI";
 import { DictionaryResponse } from "../../types/dictionary";
 import { useAudioPlayer } from "expo-audio";
-import { MaterialIcons } from "@expo/vector-icons";
+import { usePrefsStore } from "../../stores/prefsStore";
+import AppText from "../../Components/ui/AppText";
+import { colors, fonts, radii, space } from "../../theme/theme";
+
+const partLabels: Record<string, string> = {
+  noun: "isim",
+  verb: "fiil",
+  adjective: "sıfat",
+  adverb: "zarf",
+  pronoun: "zamir",
+  preposition: "edat",
+  conjunction: "bağlaç",
+  interjection: "ünlem",
+};
+
+const wordsOfTheDay = [
+  "ephemeral",
+  "serendipity",
+  "resilient",
+  "meticulous",
+  "eloquent",
+  "candid",
+  "wander",
+];
 
 type SearchScreenProps = {};
 
 const SearchScreen: React.FC<SearchScreenProps> = () => {
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [query, setQuery] = useState("");
   const [wordData, setWordData] = useState<DictionaryResponse[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorWord, setErrorWord] = useState<string | null>(null);
+  const inputRef = useRef<TextInput>(null);
   const player = useAudioPlayer(null);
 
-  const capitalizeFirstLetter = (word: string): string => {
-    if (!word) return "";
-    return word.charAt(0).toUpperCase() + word.slice(1);
-  };
+  const recent = usePrefsStore((s) => s.recentSearches);
+  const addRecentSearch = usePrefsStore((s) => s.addRecentSearch);
+  const clearRecentSearches = usePrefsStore((s) => s.clearRecentSearches);
+
+  const wordOfTheDay =
+    wordsOfTheDay[new Date().getDate() % wordsOfTheDay.length];
 
   const playSound = (audioUrl: string) => {
-    console.log("Audio URL:", audioUrl);
     player.replace({ uri: audioUrl });
     player.play();
-    console.log("Playing sound");
   };
 
-  useEffect(() => {
-    const handleSearch = async () => {
-      console.log("Search query:", searchQuery);
-      if (searchQuery.trim() === "") {
-        setWordData(null);
-        console.log("Search query is empty, word data reset");
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      try {
-        console.log("Fetching word definition...");
-        const result = await fetchWordDefinition(searchQuery.trim());
-        console.log("Fetch result:", result);
-        setWordData(result.slice(0, 10));
-      } catch (err) {
-        console.error("Error fetching word details:", err);
-        setError("Check word and try again");
-        setWordData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const lookup = async (raw: string) => {
+    const word = raw.trim().toLowerCase();
+    if (!word) return;
+    setQuery(word);
+    setLoading(true);
+    setErrorWord(null);
+    setWordData(null);
+    try {
+      const result = await fetchWordDefinition(word);
+      setWordData(result.slice(0, 10));
+      addRecentSearch(word);
+    } catch {
+      setErrorWord(word);
+      setWordData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const delayDebounceFn = setTimeout(() => {
-      handleSearch();
-    }, 1000);
+  const clear = () => {
+    setQuery("");
+    setWordData(null);
+    setErrorWord(null);
+    inputRef.current?.focus();
+  };
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
+  const idle = !loading && !errorWord && !wordData;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.topText}>Dictionary</Text>
-      <View style={styles.searchContainer}>
-        <TextInput
-          placeholder="Search for a word..."
-          mode="outlined"
-          style={styles.searchInput}
-          value={searchQuery}
-          onChangeText={(text) => {
-            console.log("Search query updated:", text);
-            setSearchQuery(text);
-          }}
-          theme={{
-            colors: {
-              primary: "#6A5ACD",
-              background: "#fff",
-            },
-          }}
-          outlineColor="transparent"
-          activeOutlineColor="#6A5ACD"
-          left={<TextInput.Icon icon="magnify" color="#6A5ACD" />}
-          clearButtonMode="while-editing"
-        />
-      </View>
-
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#6A5ACD" />
-          <Text style={styles.loadingText}>Searching...</Text>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <AppText weight="semibold" style={styles.topText}>
+            Sözlük
+          </AppText>
+          <AppText style={styles.sub}>İngilizce kelimelerin anlamları</AppText>
         </View>
-      )}
 
-      {error && (
-        <View style={styles.errorContainer}>
-          <MaterialIcons name="error-outline" size={24} color="#FF6B6B" />
-          <Text style={styles.errorText}>{error}</Text>
+        <View style={styles.searchRow}>
+          <Search size={18} color={colors.muted} />
+          <TextInput
+            ref={inputRef}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Bir kelime ara"
+            placeholderTextColor="rgba(111,109,123,0.7)"
+            autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            returnKeyType="search"
+            onSubmitEditing={() => lookup(query)}
+            style={styles.input}
+          />
+          {!!query && (
+            <Pressable
+              accessibilityLabel="Temizle"
+              onPress={clear}
+              style={styles.clearBtn}
+            >
+              <X size={16} color={colors.muted} />
+            </Pressable>
+          )}
+          <Pressable
+            disabled={!query.trim()}
+            onPress={() => lookup(query)}
+            style={[styles.searchBtn, !query.trim() && styles.searchBtnOff]}
+          >
+            <AppText
+              weight="semibold"
+              style={[
+                styles.searchBtnText,
+                !query.trim() && { color: colors.muted },
+              ]}
+            >
+              Ara
+            </AppText>
+          </Pressable>
         </View>
-      )}
 
-      {wordData && (
-        <FlatList
-          style={styles.flatList}
-          showsVerticalScrollIndicator={false}
-          data={wordData}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={({ item }) => {
-            const validPhonetics = item.phonetics.filter(
-              (phonetic) => phonetic.text || phonetic.audio
-            );
-
-            return (
-              <View style={styles.wordContainer}>
-                <View style={styles.wordHeaderContainer}>
-                  <Text style={styles.wordTitle}>
-                    {capitalizeFirstLetter(item.word)}
-                  </Text>
-
-                  {validPhonetics.length > 0 && validPhonetics[0].audio && (
-                    <TouchableOpacity
-                      style={styles.playButton}
-                      onPress={() =>
-                        validPhonetics[0].audio &&
-                        playSound(validPhonetics[0].audio)
-                      }
-                    >
-                      <MaterialIcons
-                        name="volume-up"
-                        size={24}
-                        color="#6A5ACD"
-                      />
-                    </TouchableOpacity>
-                  )}
+        <View style={styles.body}>
+          {idle && (
+            <View style={styles.idle}>
+              <Pressable
+                onPress={() => lookup(wordOfTheDay)}
+                style={styles.wotd}
+              >
+                <AppText weight="mono" style={styles.wotdLabel}>
+                  Günün kelimesi
+                </AppText>
+                <AppText weight="semibold" style={styles.wotdWord}>
+                  {wordOfTheDay}
+                </AppText>
+                <View style={styles.wotdCta}>
+                  <AppText weight="medium" style={styles.wotdCtaText}>
+                    Anlamını gör
+                  </AppText>
+                  <ArrowRight size={14} color={colors.accent} />
                 </View>
+              </Pressable>
 
-                {/* Phonetics display */}
-                {validPhonetics.length > 0 && (
-                  <Text style={styles.phoneticText}>
-                    {validPhonetics[0].text || ""}
-                  </Text>
-                )}
-
-                <View style={styles.divider} />
-
-                {item.meanings.map((meaning, meaningIndex) => (
-                  <View key={meaningIndex} style={styles.meaningContainer}>
-                    <View style={styles.partOfSpeechContainer}>
-                      <Text style={styles.partOfSpeech}>
-                        {capitalizeFirstLetter(meaning.partOfSpeech)}
-                      </Text>
-                    </View>
-
-                    {meaning.definitions.map((definition, defIndex) => (
-                      <View key={defIndex} style={styles.definitionContainer}>
-                        <View style={styles.bulletPoint} />
-                        <View style={styles.definitionContent}>
-                          <Text style={styles.definitionText}>
-                            {definition.definition}
-                          </Text>
-                          {definition.example && (
-                            <Text style={styles.exampleText}>
-                              "{definition.example}"
-                            </Text>
-                          )}
-                        </View>
-                      </View>
+              {recent.length > 0 && (
+                <View style={styles.recent}>
+                  <View style={styles.recentHeader}>
+                    <AppText style={styles.recentTitle}>Son aramalar</AppText>
+                    <Pressable onPress={clearRecentSearches}>
+                      <AppText weight="medium" style={styles.recentClear}>
+                        Temizle
+                      </AppText>
+                    </Pressable>
+                  </View>
+                  <View style={styles.chips}>
+                    {recent.map((w) => (
+                      <Pressable
+                        key={w}
+                        onPress={() => lookup(w)}
+                        style={styles.chip}
+                      >
+                        <AppText style={styles.chipText}>{w}</AppText>
+                      </Pressable>
                     ))}
                   </View>
-                ))}
-              </View>
-            );
-          }}
-        />
-      )}
+                </View>
+              )}
+            </View>
+          )}
 
-      {!loading && !error && !wordData && (
-        <View style={styles.emptyStateContainer}>
-          <MaterialIcons name="search" size={64} color="#E0E0E0" />
-          <Text style={styles.emptyStateText}>
-            Type a word to get its definition
-          </Text>
+          {loading && (
+            <View style={styles.loadingRow}>
+              <ActivityIndicator color={colors.accent} />
+              <LoaderCircle size={16} color={colors.accent} />
+              <AppText style={styles.loadingText}>
+                “{query}” aranıyor
+              </AppText>
+            </View>
+          )}
+
+          {errorWord && (
+            <View>
+              <AppText weight="semibold" style={styles.errorTitle}>
+                “{errorWord}” bulunamadı
+              </AppText>
+              <AppText style={styles.errorText}>
+                Yazımı kontrol et ya da kelimenin yalın halini dene.
+              </AppText>
+            </View>
+          )}
+
+          {wordData &&
+            wordData.map((entry, ei) => {
+              const phonetic = entry.phonetics.find((p) => p.text)?.text;
+              const audio = entry.phonetics.find((p) => p.audio)?.audio;
+              const meaningSynonyms = (m: (typeof entry.meanings)[number]) =>
+                (m as { synonyms?: string[] }).synonyms ?? [];
+              return (
+                <View key={ei} style={styles.entry}>
+                  <View style={styles.entryHeader}>
+                    <View style={{ flex: 1 }}>
+                      <AppText weight="semibold" style={styles.wordTitle}>
+                        {entry.word}
+                      </AppText>
+                      {!!phonetic && (
+                        <AppText weight="mono" style={styles.phonetic}>
+                          {phonetic}
+                        </AppText>
+                      )}
+                    </View>
+                    {!!audio && (
+                      <Pressable
+                        accessibilityLabel="Telaffuzu dinle"
+                        onPress={() => playSound(audio)}
+                        style={styles.audioBtn}
+                      >
+                        <Volume2 size={19} color={colors.accent} />
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {entry.meanings.map((m, mi) => (
+                    <View key={mi} style={styles.meaning}>
+                      <AppText weight="mono" style={styles.pos}>
+                        {partLabels[m.partOfSpeech] ?? m.partOfSpeech}
+                      </AppText>
+                      {m.definitions.slice(0, 4).map((d, di) => (
+                        <View key={di} style={styles.defRow}>
+                          <AppText style={styles.defNum}>{di + 1}</AppText>
+                          <View style={{ flex: 1 }}>
+                            <AppText style={styles.defText}>
+                              {d.definition}
+                            </AppText>
+                            {!!d.example && (
+                              <AppText style={styles.example}>
+                                “{d.example}”
+                              </AppText>
+                            )}
+                          </View>
+                        </View>
+                      ))}
+                      {meaningSynonyms(m).length > 0 && (
+                        <View style={styles.synRow}>
+                          <AppText style={styles.synLabel}>Eş anlamlı</AppText>
+                          {meaningSynonyms(m).slice(0, 5).map((s) => (
+                            <Pressable
+                              key={s}
+                              onPress={() => lookup(s)}
+                              style={styles.synChip}
+                            >
+                              <AppText style={styles.synText}>{s}</AppText>
+                            </Pressable>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </View>
+              );
+            })}
         </View>
-      )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "#F8F8FC",
-  },
+  container: { flex: 1, backgroundColor: colors.paper },
+  scroll: { paddingBottom: 120 },
+  header: { paddingHorizontal: space[5], paddingTop: space[3] },
   topText: {
-    width: "90%",
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#6A5ACD",
-    marginTop: 20,
-    marginBottom: 20,
+    fontSize: 30,
+    lineHeight: 30,
+    letterSpacing: -1.05,
   },
-  searchContainer: {
-    width: "90%",
-    marginBottom: 20,
+  sub: { marginTop: 8, fontSize: 13, color: colors.muted },
+  searchRow: {
+    marginTop: space[5],
+    marginHorizontal: space[4],
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    paddingLeft: space[4],
+    paddingRight: 6,
   },
-  searchInput: {
-    fontSize: 16,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  input: {
+    flex: 1,
+    height: "100%",
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.ink,
   },
-  loadingContainer: {
+  clearBtn: {
+    width: 28,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 40,
   },
-  loadingText: {
+  searchBtn: {
+    height: 36,
+    borderRadius: radii.md,
+    backgroundColor: colors.accent,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  searchBtnOff: { backgroundColor: colors.paper },
+  searchBtnText: { fontSize: 13, color: colors.white },
+  body: { marginTop: 28, paddingHorizontal: space[5] },
+  idle: { gap: 32 },
+  wotd: {
+    borderRadius: radii["2xl"],
+    backgroundColor: colors.accentSoft,
+    padding: space[5],
+  },
+  wotdLabel: {
+    fontSize: 11,
+    letterSpacing: 1.54,
+    textTransform: "uppercase",
+    color: "rgba(79,64,216,0.7)",
+  },
+  wotdWord: {
     marginTop: 12,
-    fontSize: 16,
-    color: "#666",
+    fontSize: 30,
+    letterSpacing: -0.9,
+    color: colors.accentDeep,
   },
-  errorContainer: {
+  wotdCta: {
+    marginTop: 12,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFE8E8",
-    padding: 16,
-    borderRadius: 8,
-    marginVertical: 20,
+    gap: 6,
   },
-  errorText: {
-    color: "#FF6B6B",
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  flatList: {
-    width: "90%",
-  },
-  wordContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 10,
-    shadowColor: "#6A5ACD",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  wordHeaderContainer: {
+  wotdCtaText: { fontSize: 13, color: colors.accent },
+  recent: { paddingHorizontal: 4 },
+  recentHeader: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
+  },
+  recentTitle: { fontSize: 13, color: colors.muted },
+  recentClear: { fontSize: 13, color: colors.accent },
+  chips: { marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chip: {
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  chipText: { fontSize: 14 },
+  loadingRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    gap: 10,
+  },
+  loadingText: { fontSize: 14, color: colors.muted },
+  errorTitle: { fontSize: 16 },
+  errorText: { marginTop: 4, fontSize: 14, color: colors.muted },
+  entry: { paddingHorizontal: 4 },
+  entryHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 16,
   },
   wordTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#333333",
+    fontSize: 34,
+    lineHeight: 34,
+    letterSpacing: -1.19,
   },
-  phoneticContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 4,
-  },
-  phoneticText: {
-    fontSize: 18,
-    color: "#777777",
-    fontStyle: "italic",
-    marginBottom: 12,
-  },
-  playButton: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0EEFF",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#E5E5E5",
-    marginVertical: 12,
-  },
-  meaningContainer: {
-    marginTop: 16,
-  },
-  partOfSpeechContainer: {
-    marginBottom: 12,
-  },
-  partOfSpeech: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#6A5ACD",
-    textTransform: "capitalize",
-  },
-  definitionContainer: {
-    flexDirection: "row",
-    marginBottom: 14,
-  },
-  bulletPoint: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#6A5ACD",
+  phonetic: {
     marginTop: 8,
-    marginRight: 12,
+    fontSize: 14,
+    color: colors.accent,
   },
-  definitionContent: {
-    flex: 1,
-  },
-  definitionText: {
-    fontSize: 16,
-    color: "#333333",
-    lineHeight: 22,
-  },
-  exampleText: {
-    fontSize: 15,
-    color: "#777777",
-    fontStyle: "italic",
-    marginTop: 6,
-    lineHeight: 20,
-  },
-  emptyStateContainer: {
-    flex: 1,
+  audioBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-  emptyStateText: {
-    marginTop: 16,
-    fontSize: 18,
-    color: "#999999",
-    textAlign: "center",
+  meaning: {
+    marginTop: 24,
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
+    borderTopColor: colors.line,
+    paddingTop: space[5],
   },
+  pos: {
+    fontSize: 11,
+    letterSpacing: 1.54,
+    textTransform: "uppercase",
+    color: colors.muted,
+  },
+  defRow: {
+    marginTop: 14,
+    flexDirection: "row",
+    gap: 12,
+  },
+  defNum: {
+    width: 16,
+    paddingTop: 2,
+    fontSize: 13,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
+  },
+  defText: { fontSize: 15, lineHeight: 22 },
+  example: {
+    marginTop: 4,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.muted,
+  },
+  synRow: {
+    marginTop: 16,
+    paddingLeft: 28,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6,
+  },
+  synLabel: { marginRight: 4, fontSize: 12, color: colors.muted },
+  synChip: {
+    borderRadius: radii.full,
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  synText: { fontSize: 13, color: colors.accentDeep },
 });
 
 export default SearchScreen;

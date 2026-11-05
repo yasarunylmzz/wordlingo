@@ -1,15 +1,9 @@
-import React from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Dimensions,
-  StyleSheet,
-} from "react-native";
-
-const { width } = Dimensions.get("window");
+import React, { useState } from "react";
+import { View, StyleSheet, Pressable } from "react-native";
+import Sheet from "../../../Components/ui/Sheet";
+import Field from "../../../Components/ui/Field";
+import AppText from "../../../Components/ui/AppText";
+import { colors, radii } from "../../../theme/theme";
 
 interface CardModalProps {
   visible: boolean;
@@ -29,203 +23,78 @@ const CardModal: React.FC<CardModalProps> = ({
   isEditMode,
   word1,
   word2,
-  importanceLevel,
   onWord1Change,
   onWord2Change,
-  onImportanceChange,
   onSave,
   onCancel,
 }) => {
+  const [added, setAdded] = useState<string | null>(null);
+  const valid = !!word1.trim() && !!word2.trim();
+
   return (
-    <Modal
+    <Sheet
+      title={isEditMode ? "Kartı düzenle" : "Kart ekle"}
       visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onCancel}
+      onClose={onCancel}
     >
-      <View style={styles.centeredView}>
-        <View style={styles.modalView}>
-          <Text style={styles.modalTitle}>
-            {isEditMode ? "Edit Card" : "Create New Card"}
-          </Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Word</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter word"
-              value={word1}
-              onChangeText={onWord1Change}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Translation</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter translation"
-              value={word2}
-              onChangeText={onWord2Change}
-            />
-          </View>
-
-          {!isEditMode && (
-            <View style={styles.importanceContainer}>
-              <Text style={styles.inputLabel}>Importance Level</Text>
-              <View style={styles.importanceOptions}>
-                {(["low", "medium", "high"] as const).map((level) => (
-                  <TouchableOpacity
-                    key={level}
-                    style={[
-                      styles.importanceButton,
-                      importanceLevel === level && styles.selectedImportance,
-                    ]}
-                    onPress={() => onImportanceChange(level)}
-                  >
-                    <Text
-                      style={[
-                        styles.importanceText,
-                        importanceLevel === level && { color: "white" },
-                      ]}
-                    >
-                      {level.charAt(0).toUpperCase() + level.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[styles.button, styles.cancelButton]}
-              onPress={onCancel}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.button,
-                styles.saveButton,
-                (!word1 || !word2) && styles.disabledButton,
-              ]}
-              disabled={!word1 || !word2}
-              onPress={onSave}
-            >
-              <Text style={styles.saveButtonText}>
-                {isEditMode ? "Update Card" : "Add Card"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      <View style={styles.form}>
+        <Field
+          label="Kelime"
+          autoFocus
+          value={word1}
+          onChangeText={onWord1Change}
+          placeholder="Örn. ephemeral"
+        />
+        <Field
+          label="Anlamı"
+          value={word2}
+          onChangeText={onWord2Change}
+          placeholder="Örn. geçici, kısa ömürlü"
+        />
+        <AppText style={styles.added}>
+          {added ? `“${added}” eklendi` : " "}
+        </AppText>
+        <Pressable
+          disabled={!valid}
+          onPress={() => {
+            const w = word1.trim();
+            onSave();
+            if (!isEditMode && w) setAdded(w);
+          }}
+          style={[styles.submit, !valid && styles.submitDisabled]}
+        >
+          <AppText
+            weight="semibold"
+            style={[styles.submitText, !valid && { color: colors.muted }]}
+          >
+            {isEditMode ? "Kaydet" : "Ekle"}
+          </AppText>
+        </Pressable>
       </View>
-    </Modal>
+    </Sheet>
   );
 };
 
 const styles = StyleSheet.create({
-  centeredView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  form: { gap: 16 },
+  added: {
+    height: 16,
+    fontSize: 12,
+    color: colors.accent,
   },
-  modalView: {
-    width: width * 0.85,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 25,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 20,
-    color: "#4f42d8",
-    textAlign: "center",
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 6,
-    color: "#333",
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    backgroundColor: "#f9f9f9",
-  },
-  importanceContainer: {
-    marginBottom: 25,
-  },
-  importanceOptions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  importanceButton: {
-    flex: 1,
-    padding: 10,
-    margin: 5,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    alignItems: "center",
-  },
-  selectedImportance: {
-    backgroundColor: "#4f42d8",
-    borderColor: "#4f42d8",
-  },
-  importanceText: {
-    fontWeight: "500",
-    fontSize: 14,
-    color: "#333",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  button: {
-    flex: 1,
-    borderRadius: 15,
-    padding: 12,
-    marginHorizontal: 5,
+  submit: {
+    height: 48,
+    borderRadius: radii.lg,
+    backgroundColor: colors.accent,
     alignItems: "center",
     justifyContent: "center",
   },
-  cancelButton: {
-    backgroundColor: "#f2f2f2",
+  submitDisabled: {
+    backgroundColor: colors.bar,
   },
-  saveButton: {
-    backgroundColor: "#48c590",
-  },
-  disabledButton: {
-    backgroundColor: "#a8dbc7",
-    opacity: 0.7,
-  },
-  cancelButtonText: {
-    color: "#666",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  saveButtonText: {
-    color: "white",
-    fontWeight: "600",
-    fontSize: 16,
+  submitText: {
+    fontSize: 15,
+    color: colors.white,
   },
 });
 
