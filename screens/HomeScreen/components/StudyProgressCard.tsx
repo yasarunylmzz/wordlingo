@@ -11,7 +11,7 @@ import {
 } from "../../../domain/learning/stats";
 
 /**
- * Replaces fake Home chart/todo with real learning streak + study minutes.
+ * Real learning streak + study minutes (alongside restored Chart/Todo on Home).
  */
 const StudyProgressCard = () => {
   const navigation =
