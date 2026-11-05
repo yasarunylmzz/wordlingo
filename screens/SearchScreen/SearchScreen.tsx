@@ -11,46 +11,29 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput } from "react-native-paper";
 import { fetchWordDefinition } from "../../api/dictionaryAPI";
 import { DictionaryResponse } from "../../types/dictionary";
-import { Audio } from "expo-av";
+import { useAudioPlayer } from "expo-audio";
 import { MaterialIcons } from "@expo/vector-icons";
 
 type SearchScreenProps = {};
-type SoundType = Audio.Sound | null;
 
 const SearchScreen: React.FC<SearchScreenProps> = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [wordData, setWordData] = useState<DictionaryResponse[] | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [sound, setSound] = useState<SoundType>(null);
+  const player = useAudioPlayer(null);
 
   const capitalizeFirstLetter = (word: string): string => {
     if (!word) return "";
     return word.charAt(0).toUpperCase() + word.slice(1);
   };
 
-  const playSound = async (audioUrl: string) => {
+  const playSound = (audioUrl: string) => {
     console.log("Audio URL:", audioUrl);
-    if (sound) {
-      await sound.unloadAsync();
-      console.log("Previous sound unloaded");
-    }
-    const { sound: newSound } = await Audio.Sound.createAsync({
-      uri: audioUrl,
-    });
-    setSound(newSound);
-    await newSound.playAsync();
+    player.replace({ uri: audioUrl });
+    player.play();
     console.log("Playing sound");
   };
-
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-          console.log("Sound unloaded on component unmount");
-        }
-      : undefined;
-  }, [sound]);
 
   useEffect(() => {
     const handleSearch = async () => {

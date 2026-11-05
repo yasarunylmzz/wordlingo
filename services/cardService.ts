@@ -38,7 +38,7 @@ export async function createCard(
 
   try {
     const response = await axiosInstance.post(
-      "https://api.wordlingo.me/create-card",
+      "/create-card",
       cards, // Send the array directly
       { headers }
     );

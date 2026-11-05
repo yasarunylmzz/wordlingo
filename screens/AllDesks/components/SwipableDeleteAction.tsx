@@ -1,61 +1,54 @@
 import React from "react";
 import {
-  Animated,
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { RectButton } from "react-native-gesture-handler";
+import type { SharedValue } from "react-native-reanimated";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
 
 const { width } = Dimensions.get("window");
 const SWIPE_WIDTH = width * 0.25;
 
 interface SwipeableDeleteActionProps {
-  progress: Animated.AnimatedInterpolation<number>;
-  dragX: Animated.AnimatedInterpolation<number>;
+  progress: SharedValue<number>;
+  dragX: SharedValue<number>;
   onDelete: () => void;
   isDeleting?: boolean;
 }
 
+/** Right-action panel for RNGH 3 ReanimatedSwipeable (SharedValue progress/drag). */
 const SwipeableDeleteAction: React.FC<SwipeableDeleteActionProps> = ({
   progress,
   dragX,
   onDelete,
   isDeleting = false,
 }) => {
-  const trans = dragX.interpolate({
-    inputRange: [-SWIPE_WIDTH, 0],
-    outputRange: [0, SWIPE_WIDTH],
-    extrapolate: "clamp",
-  });
-
-  const opacity = progress.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0, 0.5, 1],
+  const animatedStyle = useAnimatedStyle(() => {
+    const t = Math.min(Math.max(-dragX.value, 0), SWIPE_WIDTH);
+    return {
+      transform: [{ translateX: SWIPE_WIDTH - t }],
+      opacity: Math.min(Math.max(progress.value, 0), 1),
+    };
   });
 
   return (
-    <Animated.View
-      style={[
-        styles.deleteAction,
-        {
-          transform: [{ translateX: trans }],
-          opacity,
-        },
-      ]}
-    >
-      <RectButton
+    <Animated.View style={[styles.deleteAction, animatedStyle]}>
+      <TouchableOpacity
         style={styles.deleteButton}
         onPress={onDelete}
-        enabled={!isDeleting}
+        disabled={isDeleting}
+        accessibilityRole="button"
+        accessibilityLabel="Delete deck"
       >
         {isDeleting ? (
           <ActivityIndicator size="small" color="#fff" />
         ) : (
           <Ionicons name="trash-outline" size={22} color="#fff" />
         )}
-      </RectButton>
+      </TouchableOpacity>
     </Animated.View>
   );
 };

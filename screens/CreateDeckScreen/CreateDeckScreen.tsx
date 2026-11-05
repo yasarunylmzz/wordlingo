@@ -34,11 +34,15 @@ const CreateDeck: React.FC = () => {
     if (!userId) return alert("You need to log in");
 
     try {
-      await createDesk(title, description, userId);
+      // ImageUrl is optional; do not pass userId as the image link.
+      await createDesk(title.trim(), description.trim() || title.trim(), null);
 
       navigation.navigate("CreateCard");
     } catch (error: any) {
-      const msg = error.response?.data?.message || "Unknown error";
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Unknown error";
       alert(`Error occurred: ${msg}`);
     }
   };
