@@ -21,8 +21,9 @@ import SplashScreen from "../screens/SplashScreen/SplashScreen";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../stores/userStore";
 import { jwtDecode, JwtPayload } from "jwt-decode";
+import { RootStackParamList } from "../screens/RootStackParams";
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 function StackScreens() {
   const refreshToken = useAuthStore((state) => state.auth.refreshToken);

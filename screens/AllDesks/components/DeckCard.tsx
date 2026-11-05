@@ -2,8 +2,10 @@ import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Swipeable } from "react-native-gesture-handler";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import SwipeableDeleteAction from "./SwipableDeleteAction";
+import { RootStackParamList } from "../../RootStackParams";
 
 interface DeckCardProps {
   deck: any;
@@ -22,7 +24,8 @@ const DeckCard: React.FC<DeckCardProps> = ({
   setSwipeableRef,
   closeOtherSwipeables,
 }) => {
-  const navigation = useNavigation<NavigationProp<any>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   // İkonlar için renkler
   const cardColors = [

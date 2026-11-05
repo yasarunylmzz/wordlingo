@@ -9,11 +9,15 @@ import {
   StatusBar,
 } from "react-native";
 import React, { useState } from "react";
-import { useNavigation } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { RootStackParamList } from "../RootStackParams";
 
 const LearnScreen = () => {
   const navigation = useNavigation();
+  // Phase 0: deckId / deckTitle are typed and passed from CardDecks Play menu.
+  // Quiz content stays hardcoded until later learning-integration phases.
+  useRoute<RouteProp<RootStackParamList, "LearnScreen">>();
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [userDefinition, setUserDefinition] = useState("");
   const [showAnswer, setShowAnswer] = useState(false);
