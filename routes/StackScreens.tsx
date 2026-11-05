@@ -70,7 +70,7 @@ function StackScreens() {
       <Stack.Navigator
         screenOptions={{
           headerStyle: { elevation: 0 },
-          cardStyle: { backgroundColor: "#fff" },
+          cardStyle: { backgroundColor: "#f5f5f8" },
           headerShown: false,
         }}
       >
@@ -84,7 +84,7 @@ function StackScreens() {
       initialRouteName="BottomScreen"
       screenOptions={{
         headerStyle: { elevation: 0 },
-        cardStyle: { backgroundColor: "#fff" },
+        cardStyle: { backgroundColor: "#f5f5f8" },
         headerShown: false,
       }}
     >
@@ -113,7 +113,7 @@ function StackScreens() {
       initialRouteName="Home"
       screenOptions={{
         headerStyle: { elevation: 0 },
-        cardStyle: { backgroundColor: "#fff" },
+        cardStyle: { backgroundColor: "#f5f5f8" },
         headerShown: false,
       }}
     >

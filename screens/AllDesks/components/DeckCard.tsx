@@ -1,11 +1,20 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, Pressable, StyleSheet } from "react-native";
+import { ChevronRight } from "lucide-react-native";
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import SwipeableDeleteAction from "./SwipableDeleteAction";
 import { RootStackParamList } from "../../RootStackParams";
+import AppText from "../../../Components/ui/AppText";
+import { usePrefsStore } from "../../../stores/prefsStore";
+import {
+  colors,
+  deckInitials,
+  deckTones,
+  radii,
+  space,
+} from "../../../theme/theme";
 
 interface DeckCardProps {
   deck: any;
@@ -26,17 +35,11 @@ const DeckCard: React.FC<DeckCardProps> = ({
 }) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-
-  // İkonlar için renkler
-  const cardColors = [
-    "#6A5ACD",
-    "#4169E1",
-    "#3498db",
-    "#1abc9c",
-    "#2ecc71",
-    "#f1c40f",
-  ];
-  const cardColor = cardColors[index % cardColors.length];
+  const getDeckTone = usePrefsStore((s) => s.getDeckTone);
+  const tone = deckTones[getDeckTone(deck.ID, index) % deckTones.length];
+  const title = deck.Title ?? deck.title ?? "";
+  const description = deck.Description ?? deck.description ?? "";
+  const count = deck.cardCount ?? deck.CardCount ?? 0;
 
   return (
     <Swipeable
@@ -50,124 +53,104 @@ const DeckCard: React.FC<DeckCardProps> = ({
         <SwipeableDeleteAction
           progress={progress}
           dragX={dragX}
-          onDelete={() => onDelete(deck.ID, deck.Title)}
+          onDelete={() => onDelete(deck.ID, title)}
           isDeleting={isDeleting}
         />
       )}
     >
-      <View style={styles.deckCardContainer}>
-        <TouchableOpacity
-          style={[styles.deckCard, { borderLeftColor: cardColor }]}
-          activeOpacity={0.7}
-          onPress={() => {
-            navigation.navigate("CardDecks", {
-              deckId: deck.ID,
-              deckTitle: deck.Title,
-            });
-          }}
-        >
-          {/* Card Content */}
-          <View style={styles.deckIconContainer}>
-            <View style={[styles.deckIcon, { backgroundColor: cardColor }]}>
-              <Ionicons name="layers-outline" size={24} color="#fff" />
-            </View>
+      <Pressable
+        style={({ pressed }) => [
+          styles.row,
+          pressed && { backgroundColor: "rgba(245,245,248,0.85)" },
+        ]}
+        onPress={() => {
+          navigation.navigate("CardDecks", {
+            deckId: deck.ID,
+            deckTitle: title,
+          });
+        }}
+      >
+        <View style={[styles.avatar, { backgroundColor: tone.bg }]}>
+          <AppText weight="semibold" style={[styles.avatarText, { color: tone.fg }]}>
+            {deckInitials(title || "?")}
+          </AppText>
+        </View>
+        <View style={styles.content}>
+          <AppText weight="semibold" style={styles.title} numberOfLines={1}>
+            {title}
+          </AppText>
+          {!!description && (
+            <AppText style={styles.desc} numberOfLines={1}>
+              {description}
+            </AppText>
+          )}
+        </View>
+        {count > 0 ? (
+          <AppText weight="medium" style={styles.count}>
+            {count} <AppText style={styles.countMuted}>kart</AppText>
+          </AppText>
+        ) : (
+          <View style={styles.emptyBadge}>
+            <AppText style={styles.emptyBadgeText}>Boş</AppText>
           </View>
-          <View style={styles.deckContent}>
-            <Text
-              style={styles.deckTitle}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {deck.Title}
-            </Text>
-            <Text
-              style={styles.deckDescription}
-              numberOfLines={2}
-              ellipsizeMode="tail"
-            >
-              {deck.Description}
-            </Text>
-            <View style={styles.deckMeta}>
-              <View style={styles.cardCountContainer}>
-                <Ionicons name="card-outline" size={14} color="#49709c" />
-                <Text style={styles.cardCountText}>{deck.cardCount} cards</Text>
-              </View>
-              <Text style={styles.dateText}>{deck.createdDate}</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </View>
+        )}
+        <ChevronRight size={16} color="rgba(111,109,123,0.6)" />
+      </Pressable>
     </Swipeable>
   );
 };
 
 const styles = StyleSheet.create({
-  // Styles copied from main file
-  deckCardContainer: {
-    marginVertical: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
-    elevation: 6,
-  },
-  deckCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+  row: {
     flexDirection: "row",
-    overflow: "hidden",
-    borderLeftWidth: 5,
-    borderLeftColor: "#6A5ACD",
-  },
-  deckIconContainer: {
-    padding: 16,
-    justifyContent: "center",
     alignItems: "center",
+    gap: 14,
+    paddingHorizontal: space[4],
+    paddingVertical: 14,
+    backgroundColor: colors.white,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
+    borderBottomColor: colors.line,
   },
-  deckIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: "#6A5ACD",
-    justifyContent: "center",
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: "center",
-  },
-  deckContent: {
-    flex: 1,
-    padding: 16,
-    paddingLeft: 0,
     justifyContent: "center",
   },
-  deckTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#0d141c",
-    marginBottom: 4,
-    letterSpacing: -0.5,
-  },
-  deckDescription: {
+  avatarText: {
     fontSize: 14,
-    color: "#49709c",
-    marginBottom: 8,
-    lineHeight: 18,
+    letterSpacing: -0.14,
   },
-  deckMeta: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  content: {
+    flex: 1,
+    minWidth: 0,
   },
-  cardCountContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  title: {
+    fontSize: 16,
+    letterSpacing: -0.16,
   },
-  cardCountText: {
+  desc: {
     fontSize: 13,
-    color: "#49709c",
-    marginLeft: 4,
+    color: colors.muted,
   },
-  dateText: {
+  count: {
+    fontSize: 13,
+    fontVariant: ["tabular-nums"],
+  },
+  countMuted: {
+    fontSize: 13,
+    color: colors.muted,
+  },
+  emptyBadge: {
+    borderRadius: radii.full,
+    backgroundColor: colors.paper,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  emptyBadgeText: {
     fontSize: 12,
-    color: "#718096",
+    color: colors.muted,
   },
 });
 
