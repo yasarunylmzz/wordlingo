@@ -22,17 +22,25 @@ const FlipSessionResultScreen = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route =
     useRoute<RouteProp<RootStackParamList, "FlipSessionResult">>();
-  const { deskId, deckTitle, correct, wrong, total, durationMs } =
-    route.params;
+  const {
+    deskId,
+    deckTitle,
+    correct,
+    wrong,
+    total,
+    durationMs,
+    source = "flip",
+  } = route.params;
 
   const accuracy =
     total > 0 ? Math.round((correct / total) * 100) : 0;
   const seconds = Math.round(durationMs / 1000);
+  const eyebrow = source === "quiz" ? "Quiz oturumu" : "Flip oturumu";
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.eyebrow}>Flip oturumu</Text>
+        <Text style={styles.eyebrow}>{eyebrow}</Text>
         <Text style={styles.title}>{deckTitle}</Text>
         <Text style={styles.subtitle}>Session complete</Text>
 
@@ -57,12 +65,19 @@ const FlipSessionResultScreen = () => {
 
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() =>
-            navigation.replace("FlipCardScreen", {
-              deckId: deskId,
-              deckTitle,
-            })
-          }
+          onPress={() => {
+            if (source === "quiz") {
+              navigation.replace("LearnScreen", {
+                deckId: deskId,
+                deckTitle,
+              });
+            } else {
+              navigation.replace("FlipCardScreen", {
+                deckId: deskId,
+                deckTitle,
+              });
+            }
+          }}
         >
           <Text style={styles.primaryButtonText}>Tekrar / Again</Text>
         </TouchableOpacity>
