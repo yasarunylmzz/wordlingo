@@ -1,451 +1,259 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
-  Text,
   StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  Modal,
+  Pressable,
   TextInput,
-  Animated,
-  Image,
 } from "react-native";
-import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Check, Plus, X } from "lucide-react-native";
+import AppText from "../../../Components/ui/AppText";
+import { usePrefsStore, Priority } from "../../../stores/prefsStore";
+import { colors, fonts, radii, space } from "../../../theme/theme";
 
-interface Todo {
-  id: string;
-  title: string;
-  completed: boolean;
-}
+const priorityColor: Record<Priority, string> = {
+  yüksek: colors.priorityHigh,
+  orta: colors.priorityMid,
+  düşük: colors.bar,
+};
 
 const TodoComponents = () => {
-  const [todos, setTodos] = useState<Todo[]>([
-    { id: "1", title: "Complete React Native project", completed: false },
-    { id: "2", title: "Study for exams", completed: false },
-    { id: "3", title: "Read a new book", completed: true },
-  ]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [currentTodo, setCurrentTodo] = useState<Todo | null>(null);
-  const [newTodo, setNewTodo] = useState("");
+  const todos = usePrefsStore((s) => s.todos);
+  const addTodo = usePrefsStore((s) => s.addTodo);
+  const toggleTodo = usePrefsStore((s) => s.toggleTodo);
+  const removeTodo = usePrefsStore((s) => s.removeTodo);
 
-  const handleAddTodo = () => {
-    if (newTodo.trim() !== "") {
-      setTodos([
-        ...todos,
-        { id: (todos.length + 1).toString(), title: newTodo, completed: false },
-      ]);
-      setNewTodo("");
-      setModalVisible(false);
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState("");
+  const inputRef = useRef<TextInput>(null);
+
+  const done = todos.filter((t) => t.done).length;
+  const sorted = [...todos].sort((a, b) => Number(a.done) - Number(b.done));
+
+  const submit = () => {
+    const title = draft.trim();
+    if (!title) {
+      setAdding(false);
+      return;
     }
+    addTodo(title);
+    setDraft("");
+    inputRef.current?.focus();
   };
-
-  const handleEditTodo = () => {
-    if (currentTodo && newTodo.trim() !== "") {
-      setTodos(
-        todos.map((todo) =>
-          todo.id === currentTodo.id ? { ...todo, title: newTodo } : todo
-        )
-      );
-      setNewTodo("");
-      setCurrentTodo(null);
-      setModalVisible(false);
-    }
-  };
-
-  const handleDeleteTodo = (id: string) => {
-    setTodos(todos.filter((todo) => todo.id !== id));
-  };
-
-  const renderRightActions = (item: Todo) => {
-    return (
-      <View style={styles.rightActions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={() => {
-            setCurrentTodo(item);
-            setNewTodo(item.title);
-            setModalVisible(true);
-          }}
-        >
-          <MaterialIcons name="edit" size={20} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDeleteTodo(item.id)}
-        >
-          <MaterialIcons name="delete" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
-  const renderItem = ({ item, index }: { item: Todo; index: number }) => (
-    <Swipeable renderRightActions={() => renderRightActions(item)}>
-      <View style={[styles.todoItem, index === 0 && styles.firstTodoItem]}>
-        <View style={styles.todoContent}>
-          <TouchableOpacity
-            style={styles.checkboxContainer}
-            onPress={() =>
-              setTodos(
-                todos.map((todo) =>
-                  todo.id === item.id
-                    ? { ...todo, completed: !todo.completed }
-                    : todo
-                )
-              )
-            }
-          >
-            <View style={[styles.checkbox, item.completed && styles.checked]}>
-              {item.completed && (
-                <MaterialIcons name="check" size={16} color="white" />
-              )}
-            </View>
-          </TouchableOpacity>
-          <Text
-            style={[styles.todoText, item.completed && styles.completedText]}
-          >
-            {item.title}
-          </Text>
-        </View>
-        <View style={styles.priorityIndicator} />
-      </View>
-    </Swipeable>
-  );
-
-  const EmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        ✨ No tasks yet{"\n"}Add your first task to get started!
-      </Text>
-    </View>
-  );
 
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.header}>Today's Tasks</Text>
-          <View style={styles.countContainer}>
-            <Text style={styles.countText}>{todos.length}</Text>
-          </View>
+        <View style={styles.titleRow}>
+          <AppText weight="semibold" style={styles.header}>
+            Bugün
+          </AppText>
+          <AppText weight="mono" style={styles.countText}>
+            {done}/{todos.length}
+          </AppText>
         </View>
-        <TouchableOpacity
-          style={styles.addButton}
+        <Pressable
+          style={({ pressed }) => [styles.addButton, pressed && styles.pressed]}
           onPress={() => {
-            setNewTodo("");
-            setCurrentTodo(null);
-            setModalVisible(true);
+            setAdding(true);
+            requestAnimationFrame(() => inputRef.current?.focus());
           }}
         >
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
+          <Plus size={15} color={colors.accent} strokeWidth={2.25} />
+          <AppText weight="semibold" style={styles.addButtonText}>
+            Ekle
+          </AppText>
+        </Pressable>
       </View>
 
-      <FlatList
-        data={todos}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        ListEmptyComponent={EmptyComponent}
-        contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
-      />
-
-      {/* Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {currentTodo ? "Edit Task" : "Add New Task"}
-            </Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="What do you need to do?"
-              value={newTodo}
-              onChangeText={setNewTodo}
-              placeholderTextColor="#9ca3af"
-              autoFocus
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => {
-                  setNewTodo("");
-                  setCurrentTodo(null);
-                  setModalVisible(false);
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.saveButton}
-                onPress={currentTodo ? handleEditTodo : handleAddTodo}
-              >
-                <Text style={styles.saveButtonText}>
-                  {currentTodo ? "Save" : "Add Task"}
-                </Text>
-              </TouchableOpacity>
-            </View>
+      <View style={styles.list}>
+        {sorted.map((t) => (
+          <View key={t.id} style={styles.todoItem}>
+            <Pressable
+              accessibilityLabel={
+                t.done
+                  ? "Tamamlanmadı olarak işaretle"
+                  : "Tamamlandı olarak işaretle"
+              }
+              onPress={() => toggleTodo(t.id)}
+              style={[styles.checkbox, t.done && styles.checked]}
+            >
+              {t.done && <Check size={13} color={colors.white} strokeWidth={3} />}
+            </Pressable>
+            <AppText
+              style={[styles.todoText, t.done && styles.completedText]}
+            >
+              {t.title}
+            </AppText>
+            {!t.done && (
+              <View style={styles.priority}>
+                <View
+                  style={[
+                    styles.priorityDot,
+                    { backgroundColor: priorityColor[t.priority] },
+                  ]}
+                />
+                <AppText style={styles.priorityText}>{t.priority}</AppText>
+              </View>
+            )}
+            <Pressable
+              accessibilityLabel="Görevi sil"
+              onPress={() => removeTodo(t.id)}
+              hitSlop={8}
+              style={styles.deleteBtn}
+            >
+              <X size={15} color={colors.muted} />
+            </Pressable>
           </View>
-        </View>
-      </Modal>
+        ))}
+
+        {adding && (
+          <View style={styles.addRow}>
+            <View style={styles.dashedBox} />
+            <TextInput
+              ref={inputRef}
+              value={draft}
+              onChangeText={setDraft}
+              onBlur={() => {
+                if (!draft.trim()) setAdding(false);
+              }}
+              onSubmitEditing={submit}
+              placeholder="Yeni görev"
+              placeholderTextColor="rgba(111,109,123,0.7)"
+              style={styles.input}
+              autoFocus
+              returnKeyType="done"
+            />
+          </View>
+        )}
+      </View>
+
+      {todos.length === 0 && !adding && (
+        <AppText style={styles.emptyText}>Bugün için görev yok.</AppText>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    marginTop: 12,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: "#4f42d8",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
+    paddingHorizontal: 4,
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
   },
-  titleContainer: {
+  titleRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "baseline",
+    gap: 8,
   },
   header: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#1f2937",
-    marginRight: 12,
-  },
-  countContainer: {
-    backgroundColor: "#f0f9ff",
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderWidth: 1,
-    borderColor: "#e0f2fe",
+    letterSpacing: -0.4,
   },
   countText: {
-    color: "#0369a1",
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 12,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
   },
   addButton: {
-    backgroundColor: "#4f42d8",
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 25,
-    shadowColor: "#4f42d8",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    height: 32,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentSoft,
+    paddingLeft: 10,
+    paddingRight: 12,
   },
   addButtonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 13,
+    color: colors.accent,
+  },
+  pressed: { transform: [{ scale: 0.95 }] },
+  list: {
+    marginTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth * 2,
+    borderTopColor: colors.line,
   },
   todoItem: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
-    padding: 18,
-    borderRadius: 16,
-    position: "relative",
-    overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  firstTodoItem: {
-    backgroundColor: "#fef7ff",
-    borderLeftWidth: 4,
-    borderLeftColor: "#4f42d8",
-    borderColor: "#e9d5ff",
-  },
-  todoContent: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  checkboxContainer: {
-    marginRight: 15,
-    transform: [{ scale: 1.1 }],
+    gap: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
+    borderBottomColor: colors.line,
+    paddingVertical: 14,
   },
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 8,
-    borderWidth: 2.5,
-    borderColor: "#4f42d8",
+    width: 22,
+    height: 22,
+    borderRadius: radii.full,
+    borderWidth: 1.5,
+    borderColor: "rgba(22,21,29,0.25)",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
   },
   checked: {
-    backgroundColor: "#4f42d8",
-    borderColor: "#4f42d8",
+    borderColor: colors.accent,
+    backgroundColor: colors.accent,
   },
   todoText: {
-    fontSize: 16,
-    color: "#374151",
     flex: 1,
-    fontWeight: "600",
-    lineHeight: 22,
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.ink,
   },
   completedText: {
+    color: colors.muted,
     textDecorationLine: "line-through",
-    color: "#9ca3af",
-    fontWeight: "400",
+    textDecorationColor: "rgba(22,21,29,0.3)",
   },
-  priorityIndicator: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#f59e0b",
-    marginLeft: 12,
-    shadowColor: "#f59e0b",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  rightActions: {
+  priority: {
     flexDirection: "row",
     alignItems: "center",
-    width: 130,
-    justifyContent: "space-between",
-    paddingRight: 12,
+    gap: 6,
   },
-  actionButton: {
-    justifyContent: "center",
+  priorityDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  priorityText: {
+    fontSize: 11,
+    color: colors.muted,
+  },
+  deleteBtn: {
+    padding: 2,
+  },
+  addRow: {
+    flexDirection: "row",
     alignItems: "center",
-    width: 55,
-    height: 55,
-    borderRadius: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
+    borderBottomColor: colors.line,
+    paddingVertical: 8,
   },
-  editButton: {
-    backgroundColor: "#10b981",
-  },
-  deleteButton: {
-    backgroundColor: "#ef4444",
-  },
-  separator: {
-    height: 12,
-  },
-  listContent: {
-    paddingTop: 5,
-    paddingBottom: 15,
-  },
-  emptyContainer: {
-    padding: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: "#e2e8f0",
+  dashedBox: {
+    width: 22,
+    height: 22,
+    borderRadius: radii.full,
+    borderWidth: 1.5,
     borderStyle: "dashed",
+    borderColor: "rgba(22,21,29,0.3)",
+  },
+  input: {
+    flex: 1,
+    height: 36,
+    fontSize: 15,
+    fontFamily: fonts.regular,
+    color: colors.ink,
   },
   emptyText: {
-    color: "#64748b",
-    fontSize: 16,
+    paddingVertical: 32,
     textAlign: "center",
-    fontWeight: "500",
-    lineHeight: 24,
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.65)",
-  },
-  modalContent: {
-    width: "88%",
-    backgroundColor: "#fff",
-    padding: 28,
-    borderRadius: 20,
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    marginBottom: 20,
-    color: "#1f2937",
-    textAlign: "center",
-  },
-  textInput: {
-    width: "100%",
-    borderColor: "#d1d5db",
-    borderWidth: 2,
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 28,
-    fontSize: 16,
-    backgroundColor: "#f9fafb",
-    color: "#111827",
-    fontWeight: "500",
-  },
-  modalButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-  },
-  cancelButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    backgroundColor: "#f3f4f6",
-    flex: 1,
-    marginRight: 10,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  cancelButtonText: {
-    color: "#4b5563",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  saveButton: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 14,
-    backgroundColor: "#4f42d8",
-    flex: 1,
-    marginLeft: 10,
-    alignItems: "center",
-    shadowColor: "#4f42d8",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  saveButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
+    fontSize: 14,
+    color: colors.muted,
   },
 });
 
