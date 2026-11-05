@@ -130,7 +130,9 @@ const BottomButton: React.FC<BottomButtonProps> = ({ deckId, deckTitle }) => {
                 }
               >
                 <Text style={styles.dropdownText}>🃏 Kartları Çevir</Text>
-                <Text style={styles.dropdownSubtext}>Hızlı test</Text>
+                <Text style={styles.dropdownSubtext}>
+                  Sağ doğru · Sol yanlış
+                </Text>
               </TouchableOpacity>
             </Animated.View>
 
