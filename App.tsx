@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { StyleSheet } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import SplashScreen from "./screens/SplashScreen";
 import StackScreens from "./routes/StackScreens";
 
@@ -15,12 +16,16 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  return isShowSplash ? (
-    <SplashScreen />
-  ) : (
-    <NavigationContainer>
-      <StackScreens />
-    </NavigationContainer>
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {isShowSplash ? (
+        <SplashScreen />
+      ) : (
+        <NavigationContainer>
+          <StackScreens />
+        </NavigationContainer>
+      )}
+    </GestureHandlerRootView>
   );
 };
 const styles = StyleSheet.create({

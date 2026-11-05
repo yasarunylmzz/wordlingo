@@ -1,4 +1,4 @@
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createStackNavigator } from "@react-navigation/stack";
 import LandingPages from "../screens/LandingPages/LandingPage";
 import LoginScreen from "../screens/LoginScreen/LoginScreen";
 import SignInScreen from "../screens/SignInScreen/SignInScreen";
@@ -25,7 +25,7 @@ import { useAuthStore } from "../stores/userStore";
 import { jwtDecode, JwtPayload } from "jwt-decode";
 import { RootStackParamList } from "../screens/RootStackParams";
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
 
 function StackScreens() {
   const refreshToken = useAuthStore((state) => state.auth.refreshToken);
@@ -70,7 +70,7 @@ function StackScreens() {
       <Stack.Navigator
         screenOptions={{
           headerStyle: { elevation: 0 },
-          contentStyle: { backgroundColor: "#fff" },
+          cardStyle: { backgroundColor: "#fff" },
           headerShown: false,
         }}
       >
@@ -84,7 +84,7 @@ function StackScreens() {
       initialRouteName="BottomScreen"
       screenOptions={{
         headerStyle: { elevation: 0 },
-        contentStyle: { backgroundColor: "#fff" },
+        cardStyle: { backgroundColor: "#fff" },
         headerShown: false,
       }}
     >
@@ -113,7 +113,7 @@ function StackScreens() {
       initialRouteName="Home"
       screenOptions={{
         headerStyle: { elevation: 0 },
-        contentStyle: { backgroundColor: "#fff" },
+        cardStyle: { backgroundColor: "#fff" },
         headerShown: false,
       }}
     >
