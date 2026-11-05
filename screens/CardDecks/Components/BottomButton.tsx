@@ -103,7 +103,7 @@ const BottomButton: React.FC<BottomButtonProps> = ({ deckId, deckTitle }) => {
                 style={styles.dropdownItem}
               >
                 <Text style={styles.dropdownText}>📚 Öğrenme Modu</Text>
-                <Text style={styles.dropdownSubtext}>Temel tekrar</Text>
+                <Text style={styles.dropdownSubtext}>Deck quiz</Text>
               </TouchableOpacity>
             </Animated.View>
 

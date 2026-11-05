@@ -21,7 +21,7 @@ export type RootStackParamList = {
   HelpAndSupport: undefined;
   AboutApp: undefined;
   FlipCardScreen: { deckId: string; deckTitle: string };
-  /** Minimal Phase 2 flip summary (full StudyResult is Phase 4). */
+  /** Minimal session summary (full StudyResult is Phase 4). */
   FlipSessionResult: {
     deskId: string;
     deckTitle: string;
@@ -29,6 +29,8 @@ export type RootStackParamList = {
     wrong: number;
     total: number;
     durationMs: number;
+    /** Where “Tekrar” should return; defaults to flip. */
+    source?: "flip" | "quiz";
   };
   LearnScreen: { deckId: string; deckTitle: string };
   CreateCard: undefined;

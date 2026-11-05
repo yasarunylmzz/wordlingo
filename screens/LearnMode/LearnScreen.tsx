@@ -3,87 +3,213 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   SafeAreaView,
   StyleSheet,
   StatusBar,
 } from "react-native";
-import React, { useState } from "react";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import {
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { RootStackParamList } from "../RootStackParams";
+import {
+  buildQuizQuestions,
+  type QuizQuestion,
+} from "../../domain/learning/quiz";
+import type {
+  QuizDirection,
+  StudyMode,
+  StudySessionConfig,
+} from "../../domain/learning/types";
+import {
+  finishSession,
+  loadSession,
+} from "../../services/studySessionService";
+import { useLearningStore } from "../../stores/learningStore";
+import { useCardStore } from "../../stores/cardStore";
+
+const MODES: { id: StudyMode; label: string; sub: string }[] = [
+  { id: "normal", label: "Normal", sub: "Deck" },
+  { id: "wrong", label: "Wrong", sub: "Yanlışlar" },
+  { id: "forgotten", label: "Forgotten", sub: "Unutulan" },
+  { id: "hard", label: "Hard", sub: "Zor" },
+];
+
+type ScreenPhase = "setup" | "quiz" | "empty";
+
+const MIN_POOL_FOR_QUIZ = 4;
 
 const LearnScreen = () => {
-  const navigation = useNavigation();
-  // Phase 0: deckId / deckTitle are typed and passed from CardDecks Play menu.
-  // Quiz content stays hardcoded until later learning-integration phases.
-  useRoute<RouteProp<RootStackParamList, "LearnScreen">>();
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [userDefinition, setUserDefinition] = useState("");
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answerChecked, setAnswerChecked] = useState(false);
-  const [quizCompleted, setQuizCompleted] = useState(false);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute<RouteProp<RootStackParamList, "LearnScreen">>();
+  const deckId = route.params.deckId;
+  const deckTitle = route.params.deckTitle;
 
-  const questions = [
-    {
-      term: "Computer",
-      turkishTerm: "Bilgisayar",
-      options: ["Bilgisayar", "Telefon", "Televizyon", "Klavye"],
-      correctAnswer: 0,
-      requiresDefinition: false,
-    },
-    {
-      term: "Window",
-      turkishTerm: "Pencere",
-      requiresDefinition: true,
-    },
-    {
-      term: "Book",
-      turkishTerm: "Kitap",
-      options: ["Kalem", "Kağıt", "Kitap", "Defter"],
-      correctAnswer: 2,
-      requiresDefinition: false,
-    },
-    {
-      term: "House",
-      turkishTerm: "Ev",
-      requiresDefinition: true,
-    },
-    {
-      term: "Water",
-      turkishTerm: "Su",
-      options: ["Ateş", "Su", "Hava", "Toprak"],
-      correctAnswer: 1,
-      requiresDefinition: false,
-    },
-  ];
+  const [phase, setPhase] = useState<ScreenPhase>("setup");
+  const [mode, setMode] = useState<StudyMode>("normal");
+  const [direction, setDirection] = useState<QuizDirection>("w1-w2");
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [emptyReason, setEmptyReason] = useState("");
+
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  const [answerChecked, setAnswerChecked] = useState(false);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [wrongAnswers, setWrongAnswers] = useState(0);
+
+  const startedAtRef = useRef(Date.now());
+  const correctRef = useRef(0);
+  const wrongRef = useRef(0);
+  const finishedRef = useRef(false);
+
+  const deskCardCount = useCardStore(
+    (state) => state.getCards(deckId).length
+  );
+
+  const promptLabel = useMemo(
+    () =>
+      direction === "w1-w2"
+        ? "Bu kelimenin karşılığı nedir? (word1 → word2)"
+        : "Bu kelimenin karşılığı nedir? (word2 → word1)",
+    [direction]
+  );
+
+  const buildConfig = useCallback((): StudySessionConfig => {
+    return {
+      deskId: deckId,
+      mode,
+      exercise: "quiz",
+      quizDirection: direction,
+      limit: 20,
+      shuffle: true,
+      hideMastered: false,
+    };
+  }, [deckId, mode, direction]);
+
+  const startQuiz = useCallback(() => {
+    finishedRef.current = false;
+    correctRef.current = 0;
+    wrongRef.current = 0;
+    setCorrectAnswers(0);
+    setWrongAnswers(0);
+    setCurrentQuestion(0);
+    setSelectedAnswer(null);
+    setAnswerChecked(false);
+    startedAtRef.current = Date.now();
+
+    const rawCount = useCardStore.getState().getCards(deckId).length;
+    if (rawCount < MIN_POOL_FOR_QUIZ) {
+      setEmptyReason(
+        `Quiz için en az ${MIN_POOL_FOR_QUIZ} kart gerekir (3 çeldirici + 1 soru). Bu deck'te ${rawCount} kart var.`
+      );
+      setQuestions([]);
+      setPhase("empty");
+      return;
+    }
+
+    const config = buildConfig();
+    const { pool, cards } = loadSession(config);
+
+    if (pool.length < MIN_POOL_FOR_QUIZ) {
+      setEmptyReason(
+        `Yeterli çeldirici yok. Deck'te en az ${MIN_POOL_FOR_QUIZ} kart olmalı.`
+      );
+      setQuestions([]);
+      setPhase("empty");
+      return;
+    }
+
+    if (cards.length === 0) {
+      setEmptyReason(
+        `Bu mod (${mode}) için çalışılacak kart yok. Başka bir mod deneyin.`
+      );
+      setQuestions([]);
+      setPhase("empty");
+      return;
+    }
+
+    const built = buildQuizQuestions(cards, pool, direction);
+    if (built.length === 0) {
+      setEmptyReason(
+        "Yeterli benzersiz çeldirici üretilemedi. Deck'e daha fazla kart ekleyin."
+      );
+      setQuestions([]);
+      setPhase("empty");
+      return;
+    }
+
+    setQuestions(built);
+    setPhase("quiz");
+  }, [buildConfig, deckId, direction, mode]);
+
+  const completeQuiz = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+
+    const durationMs = Math.max(0, Date.now() - startedAtRef.current);
+    const correct = correctRef.current;
+    const wrong = wrongRef.current;
+    const total = questions.length;
+
+    finishSession({
+      deskId: deckId,
+      exercise: "quiz",
+      mode,
+      correct,
+      wrong,
+      total,
+      points: correct * 5,
+      durationMs,
+    });
+
+    navigation.replace("FlipSessionResult", {
+      deskId: deckId,
+      deckTitle,
+      correct,
+      wrong,
+      total,
+      durationMs,
+      source: "quiz",
+    });
+  }, [deckId, deckTitle, mode, navigation, questions.length]);
+
+  const checkAnswer = () => {
+    if (selectedAnswer === null || answerChecked) return;
+    const question = questions[currentQuestion];
+    const isCorrect = selectedAnswer === question.correctIndex;
+    const learning = useLearningStore.getState();
+
+    if (isCorrect) {
+      learning.applyCorrect(question.cardId);
+      const next = correctRef.current + 1;
+      correctRef.current = next;
+      setCorrectAnswers(next);
+    } else {
+      learning.applyWrong(question.cardId);
+      const next = wrongRef.current + 1;
+      wrongRef.current = next;
+      setWrongAnswers(next);
+    }
+
+    setAnswerChecked(true);
+  };
 
   const handleNextQuestion = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion((prev) => prev + 1);
-      resetStates();
+      setSelectedAnswer(null);
+      setAnswerChecked(false);
     } else {
-      setQuizCompleted(true);
+      completeQuiz();
     }
   };
 
-  const checkAnswer = () => {
-    if (selectedAnswer === questions[currentQuestion].correctAnswer) {
-      setCorrectAnswers((prev) => prev + 1);
-    }
-    setAnswerChecked(true);
-  };
-
-  const resetStates = () => {
-    setSelectedAnswer(null);
-    setUserDefinition("");
-    setShowAnswer(false);
-    setAnswerChecked(false);
-  };
-
-  const getOptionStyle = (index) => {
+  const getOptionStyle = (index: number) => {
     if (!answerChecked) {
       return {
         ...styles.optionButton,
@@ -92,7 +218,7 @@ const LearnScreen = () => {
       };
     }
 
-    const isCorrect = index === questions[currentQuestion].correctAnswer;
+    const isCorrect = index === questions[currentQuestion].correctIndex;
     const isSelected = index === selectedAnswer;
 
     return {
@@ -101,8 +227,8 @@ const LearnScreen = () => {
       backgroundColor: isCorrect
         ? "#e8f6f3"
         : isSelected && !isCorrect
-        ? "#fdedec"
-        : "#f8f9fa",
+          ? "#fdedec"
+          : "#f8f9fa",
     };
   };
 
@@ -110,53 +236,91 @@ const LearnScreen = () => {
     navigation.goBack();
   };
 
-  if (quizCompleted) {
-    const accuracy = (correctAnswers / questions.length) * 100;
+  const header = (
+    <View style={styles.header}>
+      <TouchableOpacity style={styles.backButton} onPress={exitQuiz}>
+        <Ionicons name="arrow-back" size={24} color="#333" />
+      </TouchableOpacity>
+      <View style={styles.headerTitleContainer}>
+        <Text style={styles.headerTitle}>{deckTitle}</Text>
+        <Text style={styles.headerSubtitle}>Learn Mode · Quiz</Text>
+      </View>
+    </View>
+  );
 
+  if (phase === "setup") {
     return (
       <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={exitQuiz}>
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>English-Turkish</Text>
-            <Text style={styles.headerSubtitle}>Learn Mode</Text>
-          </View>
-        </View>
-
+        {header}
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.completionCard}>
-            <Text style={styles.completionTitle}>Çalışma Tamamlandı!</Text>
-
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{questions.length}</Text>
-                <Text style={styles.statLabel}>Toplam Soru</Text>
-              </View>
-
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{correctAnswers}</Text>
-                <Text style={styles.statLabel}>Doğru Cevap</Text>
-              </View>
-
-              <View style={styles.statItem}>
-                <Text style={styles.statValue}>{accuracy.toFixed(0)}%</Text>
-                <Text style={styles.statLabel}>Doğruluk</Text>
-              </View>
-            </View>
-
-            <Text style={styles.feedbackText}>
-              {accuracy >= 80
-                ? "Harika iş çıkardın! İngilizce kelime bilgin çok iyi."
-                : accuracy >= 60
-                ? "İyi iş çıkardın. Biraz daha pratik yaparak daha da gelişebilirsin."
-                : "Bu kelimeleri biraz daha çalışman gerekiyor. Tekrar dene!"}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Çalışma modu</Text>
+            <Text style={styles.setupHint}>
+              {deskCardCount} kart · en az {MIN_POOL_FOR_QUIZ} kart gerekir
             </Text>
 
-            <TouchableOpacity style={styles.exitButton} onPress={exitQuiz}>
-              <Text style={styles.buttonText}>Çıkış</Text>
+            <View style={styles.chipRow}>
+              {MODES.map((item) => {
+                const active = mode === item.id;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={[styles.chip, active && styles.chipActive]}
+                    onPress={() => setMode(item.id)}
+                  >
+                    <Text
+                      style={[styles.chipText, active && styles.chipTextActive]}
+                    >
+                      {item.label}
+                    </Text>
+                    <Text
+                      style={[styles.chipSub, active && styles.chipTextActive]}
+                    >
+                      {item.sub}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={[styles.cardTitle, { marginTop: 20 }]}>Yön</Text>
+            <View style={styles.chipRow}>
+              <TouchableOpacity
+                style={[
+                  styles.chip,
+                  direction === "w1-w2" && styles.chipActive,
+                ]}
+                onPress={() => setDirection("w1-w2")}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    direction === "w1-w2" && styles.chipTextActive,
+                  ]}
+                >
+                  word1 → word2
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.chip,
+                  direction === "w2-w1" && styles.chipActive,
+                ]}
+                onPress={() => setDirection("w2-w1")}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    direction === "w2-w1" && styles.chipTextActive,
+                  ]}
+                >
+                  word2 → word1
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity style={styles.checkButton} onPress={startQuiz}>
+              <Text style={styles.buttonText}>Başla / Start</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -164,134 +328,82 @@ const LearnScreen = () => {
     );
   }
 
+  if (phase === "empty") {
+    return (
+      <SafeAreaView style={styles.container}>
+        {header}
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Quiz başlatılamadı</Text>
+            <Text style={styles.emptyText}>{emptyReason}</Text>
+            <TouchableOpacity
+              style={styles.checkButton}
+              onPress={() => setPhase("setup")}
+            >
+              <Text style={styles.buttonText}>Mod seçimine dön</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const question = questions[currentQuestion];
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={exitQuiz}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>English-Turkish</Text>
-          <Text style={styles.headerSubtitle}>Learn Mode</Text>
-        </View>
-      </View>
+      {header}
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Progress */}
         <View style={styles.progressContainer}>
           <Text style={styles.progressText}>
             {currentQuestion + 1} / {questions.length}
           </Text>
           <Text style={styles.accuracyText}>
-            {currentQuestion > 0
-              ? `${Math.round(
-                  (correctAnswers / currentQuestion) * 100
-                )}% doğruluk`
-              : "0% doğruluk"}
+            {correctAnswers} doğru · {wrongAnswers} yanlış
           </Text>
         </View>
 
-        {/* Question Card */}
-        {!questions[currentQuestion].requiresDefinition && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>
-              Bu İngilizce kelimenin Türkçe karşılığı nedir?
-            </Text>
-            <Text style={styles.term}>{questions[currentQuestion].term}</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{promptLabel}</Text>
+          <Text style={styles.term}>{question.prompt}</Text>
 
-            {/* Multiple Choice Options */}
-            {questions[currentQuestion].options.map((option, index) => (
-              <TouchableOpacity
-                key={index}
-                style={getOptionStyle(index)}
-                onPress={() => !answerChecked && setSelectedAnswer(index)}
-                disabled={answerChecked}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-              </TouchableOpacity>
-            ))}
-
-            {/* Check Answer Button or Next Question Button */}
+          {question.options.map((option, index) => (
             <TouchableOpacity
-              style={[
-                styles.checkButton,
-                { opacity: selectedAnswer !== null || answerChecked ? 1 : 0.7 },
-              ]}
-              onPress={() => {
-                if (!answerChecked) {
-                  checkAnswer();
-                } else {
-                  handleNextQuestion();
-                }
-              }}
-              disabled={selectedAnswer === null && !answerChecked}
+              key={`${question.cardId}-${index}`}
+              style={getOptionStyle(index)}
+              onPress={() => !answerChecked && setSelectedAnswer(index)}
+              disabled={answerChecked}
             >
-              <Text style={styles.buttonText}>
-                {answerChecked ? "Sonraki Soru" : "Cevabı Kontrol Et"}
-              </Text>
+              <Text style={styles.optionText}>{option}</Text>
             </TouchableOpacity>
-          </View>
-        )}
+          ))}
 
-        {/* Definition Card */}
-        {questions[currentQuestion].requiresDefinition && (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>
-              Bu İngilizce kelimenin Türkçe karşılığını yazın:
+          <TouchableOpacity
+            style={[
+              styles.checkButton,
+              {
+                opacity: selectedAnswer !== null || answerChecked ? 1 : 0.7,
+              },
+            ]}
+            onPress={() => {
+              if (!answerChecked) {
+                checkAnswer();
+              } else {
+                handleNextQuestion();
+              }
+            }}
+            disabled={selectedAnswer === null && !answerChecked}
+          >
+            <Text style={styles.buttonText}>
+              {answerChecked
+                ? currentQuestion === questions.length - 1
+                  ? "Bitir / Finish"
+                  : "Sonraki Soru"
+                : "Cevabı Kontrol Et"}
             </Text>
-            <Text style={styles.term}>{questions[currentQuestion].term}</Text>
-
-            <TextInput
-              style={styles.definitionInput}
-              placeholder="Türkçe karşılığını yazın"
-              value={userDefinition}
-              onChangeText={setUserDefinition}
-            />
-
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: "#3498db" }]}
-                onPress={() => setShowAnswer(!showAnswer)}
-              >
-                <Text style={styles.buttonText}>
-                  {showAnswer ? "Cevabı Gizle" : "Cevabı Göster"}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  {
-                    backgroundColor: "#2ecc71",
-                    opacity: userDefinition.trim() ? 1 : 0.7,
-                  },
-                ]}
-                onPress={() => {
-                  // Consider it correct if they wrote the correct answer
-                  if (
-                    userDefinition.trim().toLowerCase() ===
-                    questions[currentQuestion].turkishTerm.toLowerCase()
-                  ) {
-                    setCorrectAnswers((prev) => prev + 1);
-                  }
-                  handleNextQuestion();
-                }}
-                disabled={!userDefinition.trim()}
-              >
-                <Text style={styles.buttonText}>Sonrakine Geç</Text>
-              </TouchableOpacity>
-            </View>
-
-            {showAnswer && (
-              <View style={styles.answerBox}>
-                <Text style={styles.correctAnswer}>
-                  Doğru Cevap: {questions[currentQuestion].turkishTerm}
-                </Text>
-              </View>
-            )}
-          </View>
-        )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -334,14 +446,13 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 16,
     flexGrow: 1,
-    alignItems: "center", // Tüm içeriği ortala
+    alignItems: "center",
   },
-
   progressContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 16,
-    width: "90%", // Sabit genişlik
+    width: "90%",
   },
   progressText: {
     color: "#3498db",
@@ -360,14 +471,57 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    width: "90%", // Sabit genişlik
-    alignSelf: "center", // Ortalama
+    width: "90%",
+    alignSelf: "center",
   },
-
   cardTitle: {
     fontSize: 18,
     fontWeight: "600",
+    marginBottom: 12,
+    color: "#2c3e50",
+  },
+  setupHint: {
+    fontSize: 13,
+    color: "#7f8c8d",
     marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: "#475569",
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: "#f8f9fa",
+    minWidth: "45%",
+    flexGrow: 1,
+  },
+  chipActive: {
+    borderColor: "#4f42d8",
+    backgroundColor: "#eeecfb",
+  },
+  chipText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#2c3e50",
+  },
+  chipSub: {
+    fontSize: 11,
+    color: "#7f8c8d",
+    marginTop: 2,
+  },
+  chipTextActive: {
+    color: "#4f42d8",
   },
   term: {
     fontSize: 24,
@@ -383,12 +537,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#e0e0e0",
     marginBottom: 8,
-    width: "100%", // Tam genişlik
+    width: "100%",
   },
   optionText: {
     color: "#2c3e50",
     fontSize: 16,
-    textAlign: "center", // Metni ortala
+    textAlign: "center",
   },
   checkButton: {
     backgroundColor: "#3498db",
@@ -396,98 +550,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 16,
-    width: "100%", // Tam genişlik
-  },
-
-  // Tanım input stil güncellemesi
-  definitionInput: {
-    height: 56,
-    borderColor: "#e0e0e0",
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
-    textAlign: "center", // Metni ortala
-  },
-  buttonRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
+    width: "100%",
   },
   buttonText: {
     color: "white",
     fontWeight: "500",
     fontSize: 16,
-  },
-  answerBox: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 8,
-  },
-  correctAnswer: {
-    color: "#2ecc71",
-    fontWeight: "500",
-    fontSize: 16,
-  },
-  // Completion screen styles
-  completionCard: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 24,
-    marginVertical: 16,
-    alignItems: "center",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  completionTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 32,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginBottom: 32,
-  },
-  statItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#3498db",
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: "#7f8c8d",
-  },
-  feedbackText: {
-    fontSize: 16,
-    color: "#2c3e50",
-    textAlign: "center",
-    marginBottom: 32,
-    lineHeight: 22,
-  },
-  exitButton: {
-    backgroundColor: "#3498db",
-    paddingVertical: 12,
-    paddingHorizontal: 36,
-    borderRadius: 8,
-    alignItems: "center",
   },
 });
 
