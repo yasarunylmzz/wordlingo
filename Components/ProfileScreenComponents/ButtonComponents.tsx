@@ -4,11 +4,18 @@ import ProfileIcon from "../../svg/ProfileIcon";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "../../screens/RootStackParams";
 
+/** Screens reachable from profile settings (no route params). */
+type SettingsTargetScreen = {
+  [K in keyof RootStackParamList]: RootStackParamList[K] extends undefined
+    ? K
+    : never;
+}[keyof RootStackParamList];
+
 interface ButtonComponentsProps {
   title: string;
   description: string;
   icon: React.ReactNode;
-  targetScreen: keyof RootStackParamList;
+  targetScreen: SettingsTargetScreen;
 }
 type NavigationType = NavigationProp<RootStackParamList>;
 

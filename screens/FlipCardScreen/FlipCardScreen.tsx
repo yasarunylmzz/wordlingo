@@ -13,25 +13,18 @@ import {
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import LeftArrow from "../../svg/LeftArrow";
 import FlipCard from "./Components/FlipCard";
 import { useCardStore } from "../../stores/cardStore";
+import { RootStackParamList } from "../RootStackParams";
 
 const FlipCardScreen = () => {
   const navigation = useNavigation();
-  const route = useRoute();
+  const route = useRoute<RouteProp<RootStackParamList, "FlipCardScreen">>();
 
-  // Route parametrelerini güvenli bir şekilde al
-  const params = route.params as
-    | {
-        deckId?: string;
-        deckTitle?: string;
-      }
-    | undefined;
-
-  const deckId = params?.deckId || "default";
-  const deckTitle = params?.deckTitle || "Common Words";
+  const deckId = route.params.deckId;
+  const deckTitle = route.params.deckTitle;
 
   // Store'dan kartları al ve sayısını hesapla
   const { getCards } = useCardStore();

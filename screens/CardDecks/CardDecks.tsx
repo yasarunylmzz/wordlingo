@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { RouteProp, useRoute } from "@react-navigation/native";
 
 import Header from "./Components/Header";
 import BottomButton from "./Components/BottomButton";
@@ -15,13 +15,11 @@ import CardModal from "./Components/CardModal";
 import { useCardOperations } from "./hooks/useCardOperations";
 import { getCardList } from "../../services/cardService";
 import { useCardStore } from "../../stores/cardStore";
+import { RootStackParamList } from "../RootStackParams";
 
 const CardDecks: React.FC = () => {
-  const route = useRoute();
-  const { deckId, deckTitle } = route.params as {
-    deckId: string;
-    deckTitle: string;
-  };
+  const route = useRoute<RouteProp<RootStackParamList, "CardDecks">>();
+  const { deckId, deckTitle } = route.params;
 
   const [loading, setLoading] = useState(false);
 

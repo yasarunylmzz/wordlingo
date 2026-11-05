@@ -1,25 +1,29 @@
 export type RootStackParamList = {
+  // Boot / auth gate
+  SplashScreen: undefined;
+
+  // Unauthenticated stack (StackScreens when no valid JWT)
   Home: undefined;
-  Settings: undefined;
   Login: undefined;
   SignIn: undefined;
   FirstScreen: undefined;
-  StatisticsScreen: undefined;
+  TwoFactorAuth: undefined;
+
+  // Authenticated stack
   BottomScreen: undefined;
   ProfileScreen: undefined;
   SearchScreen: undefined;
-  SelectionScreen1: undefined;
-  SelectionScreen2: undefined;
-  CardDecks: { userId: string; title: string };
+  AllDecks: undefined;
+  CreateDeck: undefined;
+  CardDecks: { deckId: string; deckTitle: string };
   MyAccount: undefined;
-  SavedBeneficary: undefined;
   FaceId: undefined;
-  TwoFactorAuth: undefined;
   HelpAndSupport: undefined;
   AboutApp: undefined;
-  NotificationScreen: undefined;
-  CreateDeck: undefined;
+  FlipCardScreen: { deckId: string; deckTitle: string };
+  LearnScreen: { deckId: string; deckTitle: string };
   CreateCard: undefined;
-  Header: undefined;
-  AllDesks: undefined;
+
+  // Referenced by Home header; screen not registered yet
+  NotificationScreen: undefined;
 };
