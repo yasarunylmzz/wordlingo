@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import type { Card } from "../../../types/cardAndDesk";
 import { selectSessionCards } from "../session";
-import { applyCorrect } from "../level";
+import { applyCorrect, MS_PER_DAY } from "../level";
 import {
   defaultLearningState,
   learningStateFromStudyCard,
   mergeCardWithLearning,
+  migrateLearningState,
 } from "../merge";
 import type { StudySessionConfig } from "../types";
 
@@ -76,5 +77,40 @@ describe("study session pipeline", () => {
     expect(byCardId.c1.learningLevel).toBe(3);
     expect(byCardId.c1.correctCount).toBe(3);
     expect(byCardId.c1.lastStudiedAt).toBe(12);
+    expect(byCardId.c1.intervalDays).toBe(14);
+    expect(byCardId.c1.dueAt).toBe(12 + 14 * MS_PER_DAY);
+  });
+
+  test("importanceLevel does not change the interval", () => {
+    const low = applyCorrect(
+      mergeCardWithLearning(cards[1], byCardId.c2),
+      1000
+    );
+    const high = applyCorrect(
+      mergeCardWithLearning(cards[2], byCardId.c3),
+      1000
+    );
+    expect(cards[1].importanceLevel).not.toBe(cards[2].importanceLevel);
+    expect(low.intervalDays).toBe(1);
+    expect(high.intervalDays).toBe(low.intervalDays);
+    expect(high.dueAt).toBe(low.dueAt);
+  });
+
+  test("a saved card with no dueAt is treated as due now", () => {
+    const legacy = {
+      cardId: "c1",
+      deskId,
+      learningLevel: 3 as const,
+      correctCount: 3,
+      wrongCount: 0,
+      isHard: false,
+      lastStudiedAt: 4,
+    };
+    const migrated = migrateLearningState(legacy, 500);
+    expect(migrated.dueAt).toBe(500);
+    expect(migrated.intervalDays).toBe(0);
+
+    const again = migrateLearningState(migrated, 900);
+    expect(again).toBe(migrated);
   });
 });

@@ -30,7 +30,7 @@ const StudyProgressCard = () => {
         {studiedToday ? "Bugün çalıştın" : "Bugün çalış"}
       </Text>
       <Text style={styles.subtitle}>
-        Seviye merdiveni + yanlış / unutulan kuyrukları
+        Bugün vadesi gelen kartlar · yanlış ve zor filtreleri
       </Text>
 
       <View style={styles.statsRow}>

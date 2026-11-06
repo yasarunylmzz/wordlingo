@@ -13,6 +13,8 @@ export function makeStudyCard(
     wrongCount: 0,
     isHard: false,
     lastStudiedAt: 0,
+    dueAt: 0,
+    intervalDays: 0,
     ...overrides,
   };
 }

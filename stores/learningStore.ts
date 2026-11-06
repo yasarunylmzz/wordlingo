@@ -11,6 +11,7 @@ import {
   defaultLearningState,
   learningStateFromStudyCard,
   mergeCardWithLearning,
+  migrateLearningState,
 } from "../domain/learning/merge";
 import { masteredCount, streakFromDates, todayKey } from "../domain/learning/stats";
 import type {
@@ -74,10 +75,12 @@ type LearningStoreState = {
 
 function requireStudyCard(
   byCardId: Record<string, CardLearningState>,
-  cardId: string
+  cardId: string,
+  now = Date.now()
 ): StudyCard | null {
-  const state = byCardId[cardId];
-  if (!state) return null;
+  const raw = byCardId[cardId];
+  if (!raw) return null;
+  const state = migrateLearningState(raw, now);
   return {
     id: state.cardId,
     deskId: state.deskId,
@@ -88,8 +91,27 @@ function requireStudyCard(
     wrongCount: state.wrongCount,
     isHard: state.isHard,
     lastStudiedAt: state.lastStudiedAt,
+    dueAt: state.dueAt,
+    intervalDays: state.intervalDays,
   };
 }
+
+function migrateMap(
+  byCardId: Record<string, CardLearningState>,
+  now: number
+): { byCardId: Record<string, CardLearningState>; changed: boolean } {
+  let changed = false;
+  const next: Record<string, CardLearningState> = {};
+  for (const [id, value] of Object.entries(byCardId)) {
+    const migrated = migrateLearningState(value, now);
+    next[id] = migrated;
+    if (migrated !== value) changed = true;
+  }
+  return { byCardId: changed ? next : byCardId, changed };
+}
+
+/** Set in `merge`, consumed by rehydrate so the filled dueAt is written back. */
+let migratedOnHydrate = false;
 
 export const useLearningStore = create<LearningStoreState>()(
   persist(
@@ -101,15 +123,26 @@ export const useLearningStore = create<LearningStoreState>()(
 
       seedDeskCards: (deskId, cards) => {
         set((state) => {
+          const now = Date.now();
           const next = { ...state.byCardId };
+          let changed = false;
           for (const card of cards) {
-            if (!next[card.id]) {
-              next[card.id] = defaultLearningState(card.id, deskId);
-            } else if (next[card.id].deskId !== deskId) {
-              next[card.id] = { ...next[card.id], deskId };
+            const existing = next[card.id];
+            if (!existing) {
+              next[card.id] = defaultLearningState(card.id, deskId, now);
+              changed = true;
+              continue;
+            }
+            const migrated = migrateLearningState(existing, now);
+            if (migrated.deskId !== deskId) {
+              next[card.id] = { ...migrated, deskId };
+              changed = true;
+            } else if (migrated !== existing) {
+              next[card.id] = migrated;
+              changed = true;
             }
           }
-          return { byCardId: next };
+          return changed ? { byCardId: next } : state;
         });
       },
 
@@ -202,10 +235,23 @@ export const useLearningStore = create<LearningStoreState>()(
     {
       name: "learning-storage",
       storage: secureStorage,
-      onRehydrateStorage: () => (_state, error) => {
+      merge: (persistedState, currentState) => {
+        const saved = (persistedState ?? {}) as Partial<LearningStoreState>;
+        const merged = { ...currentState, ...saved };
+        if (!saved.byCardId) return merged;
+        const { byCardId, changed } = migrateMap(saved.byCardId, Date.now());
+        migratedOnHydrate = changed;
+        return { ...merged, byCardId };
+      },
+      onRehydrateStorage: () => (state, error) => {
         if (error) {
           console.log("Error rehydrating learning storage:", error);
+          migratedOnHydrate = false;
+          return;
         }
+        if (!state || !migratedOnHydrate) return;
+        migratedOnHydrate = false;
+        useLearningStore.setState({ byCardId: state.byCardId });
       },
     }
   )

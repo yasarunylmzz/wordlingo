@@ -15,6 +15,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { loadSession, finishSession } from "../../../services/studySessionService";
+import { withFlipLevelZeroRetry } from "../../../domain/learning/session";
 import { useLearningStore } from "../../../stores/learningStore";
 import type { StudyCard, StudyMode } from "../../../domain/learning/types";
 
@@ -73,6 +74,13 @@ const FlipCard: React.FC<FlipCardProps> = ({
   const wrongRef = useRef(0);
   const totalRef = useRef(0);
   const completedRef = useRef(false);
+  const stackRef = useRef<StudyCard[]>([]);
+  const levelZeroRetriedRef = useRef(new Set<string>());
+
+  const replaceStack = useCallback((next: StudyCard[]) => {
+    stackRef.current = next;
+    setStack(next);
+  }, []);
 
   const translateX = useSharedValue(0);
   const flipAnimValue = useSharedValue(0);
@@ -96,6 +104,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
     startedAtRef.current = Date.now();
     correctRef.current = 0;
     wrongRef.current = 0;
+    levelZeroRetriedRef.current = new Set();
     setCorrect(0);
     setWrong(0);
     setFinished(false);
@@ -114,18 +123,18 @@ const FlipCard: React.FC<FlipCardProps> = ({
         hideMastered,
       });
       // Stack top = last index (matches existing Flip UI)
-      setStack(cards);
+      replaceStack(cards);
       setTotal(cards.length);
       totalRef.current = cards.length;
       emitProgress(cards.length, 0, 0, cards.length);
     } catch (error) {
       console.error("Load flip session error:", error);
-      setStack([]);
+      replaceStack([]);
       setTotal(0);
       totalRef.current = 0;
       emitProgress(0, 0, 0, 0);
     }
-  }, [deckId, emitProgress, hideMastered, mode, shuffle]);
+  }, [deckId, emitProgress, hideMastered, mode, replaceStack, shuffle]);
 
   const completeSession = useCallback(() => {
     if (completedRef.current) return;
@@ -162,36 +171,50 @@ const FlipCard: React.FC<FlipCardProps> = ({
   }, [deckId, deckTitle, mode, onSessionComplete]);
 
   const rateAndRemove = (direction: FlipSwipeDirection) => {
-    setStack((prev) => {
-      if (prev.length === 0) return prev;
-      const card = prev[prev.length - 1];
-      const learning = useLearningStore.getState();
+    const prev = stackRef.current;
+    if (prev.length === 0) return;
+    const card = prev[prev.length - 1];
+    const learning = useLearningStore.getState();
+    let next = prev.slice(0, -1);
 
-      if (direction === "right") {
-        // Sağ = Doğru / Knew it
-        learning.applyCorrect(card.id);
-        const nextCorrect = correctRef.current + 1;
-        correctRef.current = nextCorrect;
-        setCorrect(nextCorrect);
-        const remaining = prev.length - 1;
-        emitProgress(remaining, nextCorrect, wrongRef.current, totalRef.current);
-      } else {
-        // Sol = Yanlış / Forgot
-        learning.applyWrong(card.id);
-        const nextWrong = wrongRef.current + 1;
-        wrongRef.current = nextWrong;
-        setWrong(nextWrong);
-        const remaining = prev.length - 1;
-        emitProgress(remaining, correctRef.current, nextWrong, totalRef.current);
+    if (direction === "right") {
+      // Sağ = Doğru / Knew it
+      learning.applyCorrect(card.id);
+      const nextCorrect = correctRef.current + 1;
+      correctRef.current = nextCorrect;
+      setCorrect(nextCorrect);
+    } else {
+      // Sol = Yanlış / Forgot
+      const updated = learning.applyWrong(card.id);
+      const nextWrong = wrongRef.current + 1;
+      wrongRef.current = nextWrong;
+      setWrong(nextWrong);
+      if (updated) {
+        const retried = withFlipLevelZeroRetry(
+          prev,
+          updated.learningLevel,
+          levelZeroRetriedRef.current
+        );
+        next = retried.stack;
+        if (retried.appended) {
+          levelZeroRetriedRef.current.add(card.id);
+          totalRef.current += 1;
+          setTotal(totalRef.current);
+        }
       }
+    }
 
-      const next = prev.slice(0, -1);
-      if (next.length === 0) {
-        // Defer so state flush finishes before navigate
-        setTimeout(() => completeSession(), 0);
-      }
-      return next;
-    });
+    replaceStack(next);
+    emitProgress(
+      next.length,
+      correctRef.current,
+      wrongRef.current,
+      totalRef.current
+    );
+    if (next.length === 0) {
+      // Defer so state flush finishes before navigate
+      setTimeout(() => completeSession(), 0);
+    }
 
     translateX.value = 0;
     setIsFlipped(false);

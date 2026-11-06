@@ -24,9 +24,9 @@ import type {
 import { useCardStore } from "../../stores/cardStore";
 
 const MODES: { id: StudyMode; label: string; sub: string }[] = [
+  { id: "today", label: "Bugün", sub: "Vadesi gelen" },
   { id: "normal", label: "Normal", sub: "Bu deck" },
   { id: "wrong", label: "Wrong", sub: "Yanlışlar" },
-  { id: "forgotten", label: "Forgotten", sub: "Unutulan" },
   { id: "hard", label: "Hard", sub: "Zor işaretli" },
   { id: "review", label: "Review", sub: "Karışık" },
 ];
@@ -40,7 +40,7 @@ const StudySetupScreen = () => {
   const cardCount = useCardStore((state) => state.getCards(deckId).length);
 
   const [exercise, setExercise] = useState<StudyExercise>("quiz");
-  const [mode, setMode] = useState<StudyMode>("normal");
+  const [mode, setMode] = useState<StudyMode>("today");
   const [shuffle, setShuffle] = useState(true);
   const [hideMastered, setHideMastered] = useState(false);
   const [quizDirection, setQuizDirection] =
@@ -196,7 +196,9 @@ const StudySetupScreen = () => {
             <View>
               <Text style={styles.toggleTitle}>Hide mastered</Text>
               <Text style={styles.toggleSub}>
-                Seviye 3 (öğrendim) kartları gizle
+                {mode === "today"
+                  ? "Bugün kuyruğunda vadesi gelen seviye 3 kalır"
+                  : "Seviye 3 (öğrendim) kartları gizle"}
               </Text>
             </View>
             <Switch
