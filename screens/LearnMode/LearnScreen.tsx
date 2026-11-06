@@ -20,6 +20,7 @@ import {
   buildQuizQuestions,
   type QuizQuestion,
 } from "../../domain/learning/quiz";
+import { queueLevelZeroRetry } from "../../domain/learning/session";
 import type {
   QuizDirection,
   StudyMode,
@@ -33,9 +34,9 @@ import { useLearningStore } from "../../stores/learningStore";
 import { useCardStore } from "../../stores/cardStore";
 
 const MODES: { id: StudyMode; label: string; sub: string }[] = [
+  { id: "today", label: "Bugün", sub: "Vadesi gelen" },
   { id: "normal", label: "Normal", sub: "Deck" },
   { id: "wrong", label: "Wrong", sub: "Yanlışlar" },
-  { id: "forgotten", label: "Forgotten", sub: "Unutulan" },
   { id: "hard", label: "Hard", sub: "Zor" },
 ];
 
@@ -76,6 +77,7 @@ const LearnScreen = () => {
   const wrongRef = useRef(0);
   const finishedRef = useRef(false);
   const didAutoStart = useRef(false);
+  const levelZeroRetriedRef = useRef(new Set<string>());
 
   const deskCardCount = useCardStore(
     (state) => state.getCards(deckId).length
@@ -105,6 +107,7 @@ const LearnScreen = () => {
     finishedRef.current = false;
     correctRef.current = 0;
     wrongRef.current = 0;
+    levelZeroRetriedRef.current = new Set();
     setCorrectAnswers(0);
     setWrongAnswers(0);
     setCurrentQuestion(0);
@@ -209,10 +212,23 @@ const LearnScreen = () => {
       correctRef.current = next;
       setCorrectAnswers(next);
     } else {
-      learning.applyWrong(question.cardId);
+      const updated = learning.applyWrong(question.cardId);
       const next = wrongRef.current + 1;
       wrongRef.current = next;
       setWrongAnswers(next);
+      if (updated?.learningLevel === 0) {
+        const queued = queueLevelZeroRetry(
+          questions,
+          question,
+          updated.learningLevel,
+          levelZeroRetriedRef.current,
+          (item) => item.cardId
+        );
+        if (queued.length !== questions.length) {
+          levelZeroRetriedRef.current.add(question.cardId);
+          setQuestions(queued);
+        }
+      }
     }
 
     setAnswerChecked(true);
