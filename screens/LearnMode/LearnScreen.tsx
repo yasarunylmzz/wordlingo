@@ -1,47 +1,43 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  SafeAreaView,
-  StyleSheet,
-  StatusBar,
-} from "react-native";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   RouteProp,
   useNavigation,
   useRoute,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Check,
+  ChevronLeft,
+  GalleryHorizontalEnd,
+  Plus,
+  X,
+} from "lucide-react-native";
 import { RootStackParamList } from "../RootStackParams";
 import {
+  QUIZ_MIN_CARDS,
   buildQuizQuestions,
+  uniqueAnswers,
   type QuizQuestion,
 } from "../../domain/learning/quiz";
-import type {
-  QuizDirection,
-  StudyMode,
-  StudySessionConfig,
-} from "../../domain/learning/types";
+import type { QuizDirection, StudyMode } from "../../domain/learning/types";
 import {
   finishSession,
   loadSession,
 } from "../../services/studySessionService";
 import { useLearningStore } from "../../stores/learningStore";
 import { useCardStore } from "../../stores/cardStore";
+import SessionHeader from "../../Components/ui/SessionHeader";
+import SessionSummary from "../../Components/ui/SessionSummary";
+import AppText from "../../Components/ui/AppText";
+import PrimaryButton from "../../Components/ui/PrimaryButton";
+import { colors, radii, space } from "../../theme/theme";
 
-const MODES: { id: StudyMode; label: string; sub: string }[] = [
-  { id: "normal", label: "Normal", sub: "Deck" },
-  { id: "wrong", label: "Wrong", sub: "Yanlışlar" },
-  { id: "forgotten", label: "Forgotten", sub: "Unutulan" },
-  { id: "hard", label: "Hard", sub: "Zor" },
-];
+const LETTERS = ["A", "B", "C", "D"];
+const norm = (s: string) => s.trim().toLocaleLowerCase("tr-TR");
 
-type ScreenPhase = "setup" | "quiz" | "empty";
-
-const MIN_POOL_FOR_QUIZ = 4;
+type Phase = "loading" | "not-enough" | "quiz" | "empty-mode";
 
 const LearnScreen = () => {
   const navigation =
@@ -57,111 +53,113 @@ const LearnScreen = () => {
     autoStart = false,
   } = route.params;
 
-  const [phase, setPhase] = useState<ScreenPhase>("setup");
-  const [mode, setMode] = useState<StudyMode>(routeMode);
-  const [direction, setDirection] = useState<QuizDirection>(routeDirection);
-  const [shuffle] = useState(routeShuffle);
-  const [hideMastered] = useState(routeHideMastered);
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [emptyReason, setEmptyReason] = useState("");
+  const mode = routeMode as StudyMode;
+  const direction = routeDirection as QuizDirection;
+  const shuffle = routeShuffle;
+  const hideMastered = routeHideMastered;
 
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
-  const [answerChecked, setAnswerChecked] = useState(false);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
-  const [wrongAnswers, setWrongAnswers] = useState(0);
+  const rawCards = useCardStore((s) => s.getCards(deckId));
+  const [phase, setPhase] = useState<Phase>(autoStart ? "loading" : "loading");
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [index, setIndex] = useState(0);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [wrongCount, setWrongCount] = useState(0);
+  const [done, setDone] = useState(false);
+  const [optionCount, setOptionCount] = useState(0);
 
   const startedAtRef = useRef(Date.now());
   const correctRef = useRef(0);
   const wrongRef = useRef(0);
   const finishedRef = useRef(false);
-  const didAutoStart = useRef(false);
+  const wrongCardIdsRef = useRef<string[]>([]);
+  const answeredIdsRef = useRef<string[]>([]);
+  const didStart = useRef(false);
 
-  const deskCardCount = useCardStore(
-    (state) => state.getCards(deckId).length
+  const startQuiz = useCallback(
+    (overrideCards?: { cardIds?: string[] }) => {
+      finishedRef.current = false;
+      correctRef.current = 0;
+      wrongRef.current = 0;
+      wrongCardIdsRef.current = [];
+      answeredIdsRef.current = [];
+      setCorrectCount(0);
+      setWrongCount(0);
+      setIndex(0);
+      setPicked(null);
+      setRevealed(false);
+      setDone(false);
+      startedAtRef.current = Date.now();
+
+      const answers = uniqueAnswers(
+        useCardStore.getState().getCards(deckId).map((c) => ({
+          id: c.id,
+          deskId: deckId,
+          word1: c.word1,
+          word2: c.word2,
+          learningLevel: 0 as const,
+          correctCount: 0,
+          wrongCount: 0,
+          isHard: false,
+          lastStudiedAt: null,
+        })),
+        direction,
+      );
+      // Prefer learning-merged pool from loadSession for real distractors
+      const config = {
+        deskId: deckId,
+        mode,
+        exercise: "quiz" as const,
+        quizDirection: direction,
+        limit: 999,
+        shuffle,
+        hideMastered,
+      };
+      const { pool, cards } = loadSession(config);
+      const unique = uniqueAnswers(pool, direction);
+      setOptionCount(unique.length);
+
+      if (unique.length < QUIZ_MIN_CARDS) {
+        setQuestions([]);
+        setPhase("not-enough");
+        return;
+      }
+
+      let sessionCards = cards;
+      if (overrideCards?.cardIds?.length) {
+        const byId = new Map(pool.map((c) => [c.id, c]));
+        sessionCards = overrideCards.cardIds
+          .map((id) => byId.get(id))
+          .filter(Boolean) as typeof cards;
+      }
+
+      if (sessionCards.length === 0) {
+        setQuestions([]);
+        setPhase("empty-mode");
+        return;
+      }
+
+      const built = buildQuizQuestions(sessionCards, pool, direction);
+      if (built.length === 0) {
+        setOptionCount(unique.length);
+        setQuestions([]);
+        setPhase("not-enough");
+        return;
+      }
+
+      setQuestions(built);
+      setPhase("quiz");
+      void answers;
+    },
+    [deckId, direction, hideMastered, mode, shuffle],
   );
-
-  const promptLabel = useMemo(
-    () =>
-      direction === "w1-w2"
-        ? "Bu kelimenin karşılığı nedir? (word1 → word2)"
-        : "Bu kelimenin karşılığı nedir? (word2 → word1)",
-    [direction]
-  );
-
-  const buildConfig = useCallback((): StudySessionConfig => {
-    return {
-      deskId: deckId,
-      mode,
-      exercise: "quiz",
-      quizDirection: direction,
-      limit: 20,
-      shuffle,
-      hideMastered,
-    };
-  }, [deckId, mode, direction, shuffle, hideMastered]);
-
-  const startQuiz = useCallback(() => {
-    finishedRef.current = false;
-    correctRef.current = 0;
-    wrongRef.current = 0;
-    setCorrectAnswers(0);
-    setWrongAnswers(0);
-    setCurrentQuestion(0);
-    setSelectedAnswer(null);
-    setAnswerChecked(false);
-    startedAtRef.current = Date.now();
-
-    const rawCount = useCardStore.getState().getCards(deckId).length;
-    if (rawCount < MIN_POOL_FOR_QUIZ) {
-      setEmptyReason(
-        `Quiz için en az ${MIN_POOL_FOR_QUIZ} kart gerekir (3 çeldirici + 1 soru). Bu deck'te ${rawCount} kart var.`
-      );
-      setQuestions([]);
-      setPhase("empty");
-      return;
-    }
-
-    const config = buildConfig();
-    const { pool, cards } = loadSession(config);
-
-    if (pool.length < MIN_POOL_FOR_QUIZ) {
-      setEmptyReason(
-        `Yeterli çeldirici yok. Deck'te en az ${MIN_POOL_FOR_QUIZ} kart olmalı.`
-      );
-      setQuestions([]);
-      setPhase("empty");
-      return;
-    }
-
-    if (cards.length === 0) {
-      setEmptyReason(
-        `Bu mod (${mode}) için çalışılacak kart yok. Başka bir mod deneyin.`
-      );
-      setQuestions([]);
-      setPhase("empty");
-      return;
-    }
-
-    const built = buildQuizQuestions(cards, pool, direction);
-    if (built.length === 0) {
-      setEmptyReason(
-        "Yeterli benzersiz çeldirici üretilemedi. Deck'e daha fazla kart ekleyin."
-      );
-      setQuestions([]);
-      setPhase("empty");
-      return;
-    }
-
-    setQuestions(built);
-    setPhase("quiz");
-  }, [buildConfig, deckId, direction, mode]);
 
   useEffect(() => {
-    if (!autoStart || didAutoStart.current) return;
-    didAutoStart.current = true;
+    if (didStart.current) return;
+    didStart.current = true;
     startQuiz();
-  }, [autoStart, startQuiz]);
+  }, [startQuiz]);
 
   const completeQuiz = useCallback(() => {
     if (finishedRef.current) return;
@@ -183,410 +181,564 @@ const LearnScreen = () => {
       points,
       durationMs,
     });
+  }, [deckId, mode, questions.length]);
 
-    navigation.replace("StudyResult", {
-      deskId: deckId,
-      deckTitle,
-      correct,
-      wrong,
-      total,
-      durationMs,
-      points,
-      mode,
-      exercise: "quiz",
-      source: "quiz",
-    });
-  }, [deckId, deckTitle, mode, navigation, questions.length]);
-  const checkAnswer = () => {
-    if (selectedAnswer === null || answerChecked) return;
-    const question = questions[currentQuestion];
-    const isCorrect = selectedAnswer === question.correctIndex;
-    const learning = useLearningStore.getState();
+  const answer = useCallback(
+    (option: string | null) => {
+      if (revealed || done) return;
+      const q = questions[index];
+      if (!q) return;
 
-    if (isCorrect) {
-      learning.applyCorrect(question.cardId);
-      const next = correctRef.current + 1;
-      correctRef.current = next;
-      setCorrectAnswers(next);
-    } else {
-      learning.applyWrong(question.cardId);
-      const next = wrongRef.current + 1;
-      wrongRef.current = next;
-      setWrongAnswers(next);
-    }
-
-    setAnswerChecked(true);
-  };
-
-  const handleNextQuestion = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
-      setSelectedAnswer(null);
-      setAnswerChecked(false);
-    } else {
-      completeQuiz();
-    }
-  };
-
-  const getOptionStyle = (index: number) => {
-    if (!answerChecked) {
-      return {
-        ...styles.optionButton,
-        borderColor: selectedAnswer === index ? "#3498db" : "#e0e0e0",
-        backgroundColor: selectedAnswer === index ? "#edf7fd" : "#f8f9fa",
-      };
-    }
-
-    const isCorrect = index === questions[currentQuestion].correctIndex;
-    const isSelected = index === selectedAnswer;
-
-    return {
-      ...styles.optionButton,
-      borderColor: isCorrect ? "#2ecc71" : isSelected ? "#e74c3c" : "#e0e0e0",
-      backgroundColor: isCorrect
-        ? "#e8f6f3"
-        : isSelected && !isCorrect
-          ? "#fdedec"
-          : "#f8f9fa",
-    };
-  };
-
-  const exitQuiz = () => {
-    navigation.goBack();
-  };
-
-  const header = (
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.backButton} onPress={exitQuiz}>
-        <Ionicons name="arrow-back" size={24} color="#333" />
-      </TouchableOpacity>
-      <View style={styles.headerTitleContainer}>
-        <Text style={styles.headerTitle}>{deckTitle}</Text>
-        <Text style={styles.headerSubtitle}>Learn Mode · Quiz</Text>
-      </View>
-    </View>
+      const ok = option !== null && norm(option) === norm(q.answer);
+      const learning = useLearningStore.getState();
+      if (ok) {
+        learning.applyCorrect(q.cardId);
+        const next = correctRef.current + 1;
+        correctRef.current = next;
+        setCorrectCount(next);
+      } else {
+        learning.applyWrong(q.cardId);
+        wrongCardIdsRef.current = [...wrongCardIdsRef.current, q.cardId];
+        const next = wrongRef.current + 1;
+        wrongRef.current = next;
+        setWrongCount(next);
+      }
+      answeredIdsRef.current = [...answeredIdsRef.current, q.cardId];
+      setPicked(option);
+      setRevealed(true);
+    },
+    [done, index, questions, revealed],
   );
 
-  if (phase === "setup") {
-    if (autoStart) {
-      return (
-        <SafeAreaView style={styles.container}>
-          {header}
-          <View style={styles.scrollContainer}>
-            <Text style={styles.setupHint}>Quiz hazırlanıyor…</Text>
-          </View>
-        </SafeAreaView>
-      );
+  const next = useCallback(() => {
+    if (index + 1 >= questions.length) {
+      completeQuiz();
+      setDone(true);
+      return;
     }
+    setPicked(null);
+    setRevealed(false);
+    setIndex((i) => i + 1);
+  }, [completeQuiz, index, questions.length]);
 
+  const progress = questions.length
+    ? (done ? 1 : (revealed ? index + 1 : index) / questions.length)
+    : 0;
+
+  const exitToDeck = () => {
+    navigation.navigate("CardDecks", { deckId, deckTitle });
+  };
+
+  const switchToFlip = () => {
+    navigation.replace("FlipCardScreen", {
+      deckId,
+      deckTitle,
+      mode,
+      shuffle,
+      hideMastered,
+    });
+  };
+
+  const addCards = () => {
+    navigation.navigate("CardDecks", {
+      deckId,
+      deckTitle,
+      initialAdding: true,
+    });
+  };
+
+  if (phase === "not-enough") {
     return (
-      <SafeAreaView style={styles.container}>
-        {header}
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Çalışma modu</Text>
-            <Text style={styles.setupHint}>
-              {deskCardCount} kart · en az {MIN_POOL_FOR_QUIZ} kart gerekir
-            </Text>
+      <NotEnoughCards
+        deckName={deckTitle}
+        cardCount={rawCards.length}
+        optionCount={optionCount}
+        onBack={() => navigation.goBack()}
+        onSwitchToFlip={switchToFlip}
+        onAddCards={addCards}
+      />
+    );
+  }
 
-            <View style={styles.chipRow}>
-              {MODES.map((item) => {
-                const active = mode === item.id;
+  if (phase === "empty-mode") {
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <SessionHeader
+          deckName={deckTitle}
+          correct={0}
+          wrong={0}
+          position={0}
+          total={0}
+          progress={0}
+          onExit={() => navigation.goBack()}
+        />
+        <View style={styles.emptyWrap}>
+          <AppText weight="mono" style={styles.eyebrow}>
+            {"Quiz başlatılamadı".toLocaleUpperCase("tr-TR")}
+          </AppText>
+          <AppText weight="semibold" style={styles.emptyTitle}>
+            Bu modda çalışılacak kart yok.
+          </AppText>
+          <Pressable style={styles.secondaryBtn} onPress={() => navigation.goBack()}>
+            <AppText weight="semibold">Ayarlara dön</AppText>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (phase === "loading" || questions.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <SessionHeader
+          deckName={deckTitle}
+          correct={0}
+          wrong={0}
+          position={0}
+          total={0}
+          progress={0}
+          onExit={() => navigation.goBack()}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  const q = questions[index];
+  const answered = revealed;
+  const isRight =
+    answered && picked !== null && norm(picked) === norm(q?.answer ?? "");
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <SessionHeader
+        deckName={deckTitle}
+        correct={correctCount}
+        wrong={wrongCount}
+        position={done ? questions.length : index + 1}
+        total={questions.length}
+        progress={progress}
+        onExit={() => navigation.goBack()}
+      />
+
+      {done ? (
+        <SessionSummary
+          correct={correctCount}
+          wrong={wrongCount}
+          correctLabel="Doğru"
+          wrongLabel="Yanlış"
+          onRetryWrong={() => startQuiz({ cardIds: wrongCardIdsRef.current })}
+          onRestart={() => startQuiz({ cardIds: answeredIdsRef.current })}
+          onExit={exitToDeck}
+        />
+      ) : (
+        <>
+          <View style={styles.body}>
+            <View style={styles.promptCard}>
+              <AppText weight="mono" style={styles.monoLabel}>
+                {(direction === "w1-w2" ? "Kelime" : "Anlam").toLocaleUpperCase(
+                  "tr-TR",
+                )}
+              </AppText>
+              <AppText weight="semibold" style={styles.prompt}>
+                {q.prompt}
+              </AppText>
+              <AppText style={styles.promptHint}>
+                {direction === "w1-w2"
+                  ? "Doğru anlamı seç"
+                  : "Doğru kelimeyi seç"}
+              </AppText>
+            </View>
+
+            <View style={styles.options}>
+              {q.options.map((option, i) => {
+                const isAnswer = norm(option) === norm(q.answer);
+                const isPicked =
+                  picked !== null && norm(option) === norm(picked);
+                let tone = styles.optionIdle;
+                let badge = styles.badgeIdle;
+                if (answered && isAnswer) {
+                  tone = styles.optionCorrect;
+                  badge = styles.badgeCorrect;
+                } else if (answered && isPicked) {
+                  tone = styles.optionWrong;
+                  badge = styles.badgeWrong;
+                } else if (answered) {
+                  tone = styles.optionDim;
+                }
                 return (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={[styles.chip, active && styles.chipActive]}
-                    onPress={() => setMode(item.id)}
+                  <Pressable
+                    key={`${q.cardId}-${option}-${i}`}
+                    disabled={answered}
+                    onPress={() => answer(option)}
+                    style={({ pressed }) => [
+                      styles.option,
+                      tone,
+                      pressed && !answered && { transform: [{ scale: 0.99 }] },
+                    ]}
                   >
-                    <Text
-                      style={[styles.chipText, active && styles.chipTextActive]}
-                    >
-                      {item.label}
-                    </Text>
-                    <Text
-                      style={[styles.chipSub, active && styles.chipTextActive]}
-                    >
-                      {item.sub}
-                    </Text>
-                  </TouchableOpacity>
+                    <View style={[styles.badge, badge]}>
+                      {answered && isAnswer ? (
+                        <Check size={15} color={colors.white} strokeWidth={3} />
+                      ) : answered && isPicked ? (
+                        <X size={15} color={colors.white} strokeWidth={3} />
+                      ) : (
+                        <AppText weight="monoMedium" style={styles.badgeLetter}>
+                          {LETTERS[i]}
+                        </AppText>
+                      )}
+                    </View>
+                    <AppText weight="medium" style={styles.optionText}>
+                      {option}
+                    </AppText>
+                  </Pressable>
                 );
               })}
             </View>
-
-            <Text style={[styles.cardTitle, { marginTop: 20 }]}>Yön</Text>
-            <View style={styles.chipRow}>
-              <TouchableOpacity
-                style={[
-                  styles.chip,
-                  direction === "w1-w2" && styles.chipActive,
-                ]}
-                onPress={() => setDirection("w1-w2")}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    direction === "w1-w2" && styles.chipTextActive,
-                  ]}
-                >
-                  word1 → word2
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.chip,
-                  direction === "w2-w1" && styles.chipActive,
-                ]}
-                onPress={() => setDirection("w2-w1")}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    direction === "w2-w1" && styles.chipTextActive,
-                  ]}
-                >
-                  word2 → word1
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.checkButton} onPress={startQuiz}>
-              <Text style={styles.buttonText}>Başla / Start</Text>
-            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
 
-  if (phase === "empty") {
-    return (
-      <SafeAreaView style={styles.container}>
-        {header}
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Quiz başlatılamadı</Text>
-            <Text style={styles.emptyText}>{emptyReason}</Text>
-            <TouchableOpacity
-              style={styles.checkButton}
-              onPress={() => setPhase("setup")}
-            >
-              <Text style={styles.buttonText}>Mod seçimine dön</Text>
-            </TouchableOpacity>
+          <View style={styles.footer}>
+            {answered ? (
+              <View>
+                <AppText style={styles.feedback}>
+                  {isRight ? (
+                    <AppText weight="semibold" style={{ color: colors.correct }}>
+                      Doğru, devam et.
+                    </AppText>
+                  ) : (
+                    <>
+                      <AppText weight="semibold" style={{ color: colors.wrong }}>
+                        {picked === null ? "Bilinmedi." : "Yanlış."}
+                      </AppText>
+                      <AppText style={{ color: colors.muted }}>
+                        {" "}
+                        Doğru cevap:{" "}
+                      </AppText>
+                      <AppText weight="semibold">{q.answer}</AppText>
+                    </>
+                  )}
+                </AppText>
+                <PrimaryButton
+                  label={
+                    index + 1 >= questions.length
+                      ? "Sonuçları gör"
+                      : "Devam"
+                  }
+                  onPress={next}
+                />
+              </View>
+            ) : (
+              <Pressable style={styles.dontKnow} onPress={() => answer(null)}>
+                <AppText weight="semibold" style={styles.dontKnowText}>
+                  Bilmiyorum, cevabı göster
+                </AppText>
+              </Pressable>
+            )}
           </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-
-  const question = questions[currentQuestion];
-
-  return (
-    <SafeAreaView style={styles.container}>
-      {header}
-
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            {currentQuestion + 1} / {questions.length}
-          </Text>
-          <Text style={styles.accuracyText}>
-            {correctAnswers} doğru · {wrongAnswers} yanlış
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>{promptLabel}</Text>
-          <Text style={styles.term}>{question.prompt}</Text>
-
-          {question.options.map((option, index) => (
-            <TouchableOpacity
-              key={`${question.cardId}-${index}`}
-              style={getOptionStyle(index)}
-              onPress={() => !answerChecked && setSelectedAnswer(index)}
-              disabled={answerChecked}
-            >
-              <Text style={styles.optionText}>{option}</Text>
-            </TouchableOpacity>
-          ))}
-
-          <TouchableOpacity
-            style={[
-              styles.checkButton,
-              {
-                opacity: selectedAnswer !== null || answerChecked ? 1 : 0.7,
-              },
-            ]}
-            onPress={() => {
-              if (!answerChecked) {
-                checkAnswer();
-              } else {
-                handleNextQuestion();
-              }
-            }}
-            disabled={selectedAnswer === null && !answerChecked}
-          >
-            <Text style={styles.buttonText}>
-              {answerChecked
-                ? currentQuestion === questions.length - 1
-                  ? "Bitir / Finish"
-                  : "Sonraki Soru"
-                : "Cevabı Kontrol Et"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        </>
+      )}
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f5f5f5",
-    paddingTop: StatusBar.currentHeight || 0,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-    elevation: 2,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: "flex-end",
-    marginRight: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    textAlign: "right",
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: "#7f8c8d",
-  },
-  scrollContainer: {
-    padding: 16,
-    flexGrow: 1,
-    alignItems: "center",
-  },
-  progressContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    width: "90%",
-  },
-  progressText: {
-    color: "#3498db",
-    fontWeight: "bold",
-  },
-  accuracyText: {
-    color: "#95a5a6",
-  },
-  card: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    width: "90%",
-    alignSelf: "center",
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 12,
-    color: "#2c3e50",
-  },
-  setupHint: {
-    fontSize: 13,
-    color: "#7f8c8d",
-    marginBottom: 16,
-  },
-  emptyText: {
-    fontSize: 15,
-    color: "#475569",
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-  chipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#f8f9fa",
-    minWidth: "45%",
-    flexGrow: 1,
-  },
-  chipActive: {
-    borderColor: "#4f42d8",
-    backgroundColor: "#eeecfb",
-  },
-  chipText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#2c3e50",
-  },
-  chipSub: {
-    fontSize: 11,
-    color: "#7f8c8d",
-    marginTop: 2,
-  },
-  chipTextActive: {
-    color: "#4f42d8",
-  },
-  term: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  optionButton: {
-    padding: 16,
-    borderRadius: 8,
-    backgroundColor: "#f8f9fa",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-    marginBottom: 8,
-    width: "100%",
-  },
-  optionText: {
-    color: "#2c3e50",
-    fontSize: 16,
-    textAlign: "center",
-  },
-  checkButton: {
-    backgroundColor: "#3498db",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-    width: "100%",
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "500",
-    fontSize: 16,
-  },
-});
+function NotEnoughCards({
+  deckName,
+  cardCount,
+  optionCount,
+  onBack,
+  onSwitchToFlip,
+  onAddCards,
+}: {
+  deckName: string;
+  cardCount: number;
+  optionCount: number;
+  onBack: () => void;
+  onSwitchToFlip: () => void;
+  onAddCards: () => void;
+}) {
+  const missing = QUIZ_MIN_CARDS - optionCount;
+  const duplicates = cardCount >= QUIZ_MIN_CARDS;
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+      <View style={styles.neHeader}>
+        <Pressable
+          accessibilityLabel="Geri"
+          onPress={onBack}
+          style={styles.backBtn}
+        >
+          <ChevronLeft size={20} color={colors.ink} />
+        </Pressable>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <AppText weight="semibold" style={{ fontSize: 17 }} numberOfLines={1}>
+            {deckName}
+          </AppText>
+          <AppText style={{ fontSize: 12, color: colors.muted }}>Quiz</AppText>
+        </View>
+      </View>
+
+      <View style={styles.neBody}>
+        <View style={styles.slots}>
+          {Array.from({ length: QUIZ_MIN_CARDS }, (_, i) => {
+            const filled = i < optionCount;
+            return (
+              <View
+                key={i}
+                style={[styles.slot, filled ? styles.slotFilled : styles.slotEmpty]}
+              >
+                {filled ? (
+                  <AppText weight="monoMedium" style={styles.slotLetter}>
+                    {LETTERS[i]}
+                  </AppText>
+                ) : (
+                  <Plus size={16} color="rgba(22,21,29,0.25)" />
+                )}
+              </View>
+            );
+          })}
+        </View>
+
+        <AppText weight="mono" style={[styles.eyebrow, { marginTop: 32 }]}>
+          {"Quiz başlatılamadı".toLocaleUpperCase("tr-TR")}
+        </AppText>
+        <AppText weight="semibold" style={styles.neTitle}>
+          {duplicates
+            ? "Şık oluşturmak için yeterli farklı cevap yok."
+            : `${missing} kart daha eklemen gerekiyor.`}
+        </AppText>
+        <AppText style={styles.neBodyText}>
+          Her soruda 1 doğru ve 3 yanlış şık gösteriliyor, bu yüzden destede
+          anlamı farklı en az {QUIZ_MIN_CARDS} kart olmalı. Bu destede{" "}
+          <AppText weight="medium">{cardCount} kart</AppText> var
+          {duplicates || optionCount < cardCount
+            ? `, ${optionCount} farklı cevap`
+            : ""}
+          .
+        </AppText>
+      </View>
+
+      <View style={styles.neFooter}>
+        <Pressable
+          onPress={onAddCards}
+          style={({ pressed }) => [
+            styles.addBtn,
+            pressed && { transform: [{ scale: 0.98 }] },
+          ]}
+        >
+          <Plus size={18} color={colors.white} strokeWidth={2.25} />
+          <AppText weight="semibold" style={{ color: colors.white, fontSize: 15 }}>
+            Kart ekle
+          </AppText>
+        </Pressable>
+        {cardCount > 0 && (
+          <Pressable
+            onPress={onSwitchToFlip}
+            style={({ pressed }) => [
+              styles.flipBtn,
+              pressed && { transform: [{ scale: 0.98 }] },
+            ]}
+          >
+            <GalleryHorizontalEnd size={17} color={colors.ink} />
+            <AppText weight="semibold" style={{ fontSize: 15 }}>
+              Kart çevir ile çalış
+            </AppText>
+          </Pressable>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}
 
 export default LearnScreen;
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.paper },
+  body: {
+    flex: 1,
+    paddingHorizontal: space[4],
+    paddingTop: space[5],
+  },
+  promptCard: {
+    minHeight: 188,
+    borderRadius: radii["3xl"],
+    backgroundColor: colors.white,
+    padding: space[6],
+  },
+  monoLabel: {
+    fontSize: 11,
+    letterSpacing: 1.54,
+    color: colors.muted,
+  },
+  prompt: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: -1.19,
+    paddingVertical: 16,
+  },
+  promptHint: {
+    textAlign: "center",
+    fontSize: 12,
+    color: colors.muted,
+  },
+  options: { marginTop: space[4], gap: 10 },
+  option: {
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  optionIdle: {
+    backgroundColor: colors.white,
+    borderColor: "transparent",
+  },
+  optionCorrect: {
+    backgroundColor: colors.correctBg,
+    borderColor: colors.correct,
+  },
+  optionWrong: {
+    backgroundColor: colors.wrongBg,
+    borderColor: colors.wrong,
+  },
+  optionDim: {
+    backgroundColor: colors.white,
+    borderColor: "transparent",
+    opacity: 0.45,
+  },
+  badge: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeIdle: { backgroundColor: colors.paper },
+  badgeCorrect: { backgroundColor: colors.correct },
+  badgeWrong: { backgroundColor: colors.wrong },
+  badgeLetter: { fontSize: 13, color: colors.muted },
+  optionText: { flex: 1, fontSize: 16, lineHeight: 22 },
+  footer: {
+    paddingHorizontal: space[4],
+    paddingBottom: space[9],
+    paddingTop: space[4],
+  },
+  feedback: { marginBottom: 12, paddingHorizontal: 4, fontSize: 14 },
+  dontKnow: {
+    height: 52,
+    borderRadius: radii.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dontKnowText: { fontSize: 15, color: colors.muted },
+  emptyWrap: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: space[6],
+  },
+  emptyTitle: {
+    marginTop: 8,
+    fontSize: 26,
+    letterSpacing: -0.78,
+  },
+  eyebrow: {
+    fontSize: 11,
+    letterSpacing: 1.54,
+    color: colors.muted,
+  },
+  secondaryBtn: {
+    marginTop: 24,
+    height: 48,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  neHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: space[4],
+    paddingVertical: 8,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  neBody: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: space[6],
+    paddingBottom: 40,
+  },
+  slots: { flexDirection: "row", gap: 8 },
+  slot: {
+    width: 54,
+    height: 72,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  slotFilled: {
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  slotEmpty: {
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "rgba(22,21,29,0.2)",
+  },
+  slotLetter: { fontSize: 13, color: colors.accent },
+  neTitle: {
+    marginTop: 8,
+    fontSize: 26,
+    lineHeight: 28.6,
+    letterSpacing: -0.78,
+  },
+  neBodyText: {
+    marginTop: 12,
+    fontSize: 15,
+    lineHeight: 22.5,
+    color: colors.muted,
+  },
+  neFooter: {
+    paddingHorizontal: space[4],
+    paddingBottom: space[9],
+    gap: 10,
+  },
+  addBtn: {
+    height: 52,
+    borderRadius: radii.lg,
+    backgroundColor: colors.accent,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  flipBtn: {
+    height: 48,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+});

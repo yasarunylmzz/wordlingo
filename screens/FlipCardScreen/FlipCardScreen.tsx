@@ -1,11 +1,6 @@
 import React, { useCallback, useState } from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
   RouteProp,
@@ -13,12 +8,13 @@ import {
   useRoute,
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import LeftArrow from "../../svg/LeftArrow";
 import FlipCard, {
   FlipSessionCompletePayload,
   FlipSessionProgress,
 } from "./Components/FlipCard";
 import { RootStackParamList } from "../RootStackParams";
+import SessionHeader from "../../Components/ui/SessionHeader";
+import { colors } from "../../theme/theme";
 
 const FlipCardScreen = () => {
   const navigation =
@@ -59,40 +55,27 @@ const FlipCardScreen = () => {
         source: "flip",
       });
     },
-    [navigation]
+    [navigation],
   );
 
+  const doneCount = progress.total - progress.remaining;
   const progressRatio =
-    progress.total > 0
-      ? (progress.total - progress.remaining) / progress.total
-      : 0;
+    progress.total > 0 ? doneCount / progress.total : 0;
+  const position =
+    progress.remaining > 0 ? doneCount + 1 : progress.total;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <LeftArrow />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>{deckTitle}</Text>
-            <Text style={styles.subtitle}>
-              {progress.remaining}/{progress.total} remaining ·{" "}
-              {progress.correct} doğru · {progress.wrong} yanlış
-            </Text>
-            <View style={styles.progressBarContainer}>
-              <View
-                style={[
-                  styles.progressBar,
-                  { width: `${Math.min(100, progressRatio * 100)}%` },
-                ]}
-              />
-            </View>
-          </View>
-        </View>
+      <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+        <SessionHeader
+          deckName={deckTitle}
+          correct={progress.correct}
+          wrong={progress.wrong}
+          position={position}
+          total={progress.total}
+          progress={progressRatio}
+          onExit={() => navigation.goBack()}
+        />
 
         <View style={styles.cardContainer}>
           <FlipCard
@@ -115,48 +98,13 @@ export default FlipCardScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "white",
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: 10,
-  },
-  backButton: {
-    padding: 10,
-  },
-  headerContent: {
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#2D2D2D",
-  },
-  subtitle: {
-    fontSize: 13,
-    color: "#888",
-  },
-  progressBarContainer: {
-    width: "90%",
-    height: 6,
-    backgroundColor: "#E0E0E0",
-    borderRadius: 3,
-    marginTop: 4,
-    overflow: "hidden",
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#4CAF50",
-    borderRadius: 3,
+    backgroundColor: colors.paper,
   },
   cardContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
 });

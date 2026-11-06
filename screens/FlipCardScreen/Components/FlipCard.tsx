@@ -301,16 +301,11 @@ const FlipCard: React.FC<FlipCardProps> = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.legendRow}>
-        <Text style={styles.legendLeft}>← Yanlış / Forgot</Text>
-        <Text style={styles.legendRight}>Doğru / Knew it →</Text>
-      </View>
-
       <View style={styles.stackContainer}>
         {stack.map((card, index) => {
           const isTopCard = index === stack.length - 1;
           const stackIndex = stack.length - 1 - index;
-          const maxVisibleCards = 4;
+          const maxVisibleCards = 3;
 
           if (stackIndex >= maxVisibleCards) return null;
 
@@ -322,25 +317,22 @@ const FlipCard: React.FC<FlipCardProps> = ({
                 style={[
                   styles.stackCard,
                   {
-                    backgroundColor: getCardColor(index),
+                    backgroundColor: "#ffffff",
                     zIndex: index,
                     transform: [
-                      { translateY: -stackIndex * 6 },
-                      { translateX: stackIndex * 3 },
-                      { scale: 1 - stackIndex * 0.03 },
-                      { rotate: `${stackIndex * 2}deg` },
+                      { translateY: stackIndex * 12 },
+                      { scale: 1 - stackIndex * 0.05 },
                     ],
+                    opacity: 1 - stackIndex * 0.3,
                   },
                   panStyle,
                 ]}
               >
-                <Animated.View style={[styles.swipeHintLeft, leftHintStyle]}>
-                  <Text style={styles.swipeHintLeftText}>Yanlış</Text>
-                  <Text style={styles.swipeHintLeftSub}>Forgot</Text>
-                </Animated.View>
                 <Animated.View style={[styles.swipeHintRight, rightHintStyle]}>
-                  <Text style={styles.swipeHintRightText}>Doğru</Text>
-                  <Text style={styles.swipeHintRightSub}>Knew it</Text>
+                  <Text style={styles.swipeHintRightText}>Bildim</Text>
+                </Animated.View>
+                <Animated.View style={[styles.swipeHintLeft, leftHintStyle]}>
+                  <Text style={styles.swipeHintLeftText}>Bilemedim</Text>
                 </Animated.View>
 
                 <View style={{ flex: 1 }}>
@@ -348,6 +340,7 @@ const FlipCard: React.FC<FlipCardProps> = ({
                     style={[
                       StyleSheet.absoluteFillObject,
                       styles.card,
+                      styles.cardFront,
                       frontStyle,
                       { opacity: isFlipped ? 0 : 1 },
                     ]}
@@ -355,10 +348,11 @@ const FlipCard: React.FC<FlipCardProps> = ({
                     <TouchableOpacity
                       style={styles.cardContent}
                       onPress={toggleFlip}
+                      activeOpacity={1}
                     >
-                      <Text style={[styles.cardText, { color: "#1E293B" }]}>
-                        {card.word1}
-                      </Text>
+                      <Text style={styles.faceLabel}>Kelime</Text>
+                      <Text style={styles.cardTextFront}>{card.word1}</Text>
+                      <Text style={styles.flipHint}>Çevirmek için dokun</Text>
                     </TouchableOpacity>
                   </Animated.View>
 
@@ -366,15 +360,21 @@ const FlipCard: React.FC<FlipCardProps> = ({
                     style={[
                       StyleSheet.absoluteFillObject,
                       styles.card,
+                      styles.cardBack,
                       backStyle,
-                      { backgroundColor: "#4F46E5" },
                     ]}
                   >
                     <TouchableOpacity
                       style={styles.cardContent}
                       onPress={toggleFlip}
+                      activeOpacity={1}
                     >
-                      <Text style={styles.cardText}>{card.word2}</Text>
+                      <Text style={styles.faceLabelBack}>Anlam</Text>
+                      <Text style={styles.cardTextBackPrompt}>{card.word1}</Text>
+                      <Text style={styles.cardTextBack}>{card.word2}</Text>
+                      <Text style={styles.flipHintBack}>
+                        Bildiysen sağa, bilemediysen sola kaydır
+                      </Text>
                     </TouchableOpacity>
                   </Animated.View>
                 </View>
@@ -386,72 +386,34 @@ const FlipCard: React.FC<FlipCardProps> = ({
               style={[
                 styles.stackCard,
                 {
-                  backgroundColor: getCardColor(index),
+                  backgroundColor: "#ffffff",
                   zIndex: index,
                   transform: [
-                    { translateY: -stackIndex * 6 },
-                    { translateX: stackIndex * 3 },
-                    { scale: 1 - stackIndex * 0.03 },
-                    { rotate: `${stackIndex * 2}deg` },
+                    { translateY: stackIndex * 12 },
+                    { scale: 1 - stackIndex * 0.05 },
                   ],
+                  opacity: 1 - stackIndex * 0.3,
                 },
               ]}
-            >
-              <View style={styles.cardContent}>
-                <Text style={[styles.cardText, { color: "#1E293B" }]}>
-                  {card.word1}
-                </Text>
-              </View>
-            </View>
+            />
           );
         })}
       </View>
     </View>
   );
-
-  function getCardColor(index: number) {
-    const colors = [
-      "#FF6B6B",
-      "#4ECDC4",
-      "#45B7D1",
-      "#96CEB4",
-      "#FFEAA7",
-      "#DDA0DD",
-      "#98D8C8",
-      "#F7DC6F",
-      "#BB8FCE",
-      "#85C1E9",
-    ];
-    return colors[index % colors.length];
-  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f5f5f8",
     alignItems: "center",
     justifyContent: "center",
-  },
-  legendRow: {
-    width: width * 0.85,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  },
-  legendLeft: {
-    fontSize: 12,
-    color: "#DC2626",
-    fontWeight: "600",
-  },
-  legendRight: {
-    fontSize: 12,
-    color: "#16A34A",
-    fontWeight: "600",
+    width: "100%",
   },
   stackContainer: {
     position: "relative",
-    width: width * 0.85,
+    width: width - 48,
     height: height * 0.55,
     alignItems: "center",
     justifyContent: "center",
@@ -460,16 +422,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     height: "100%",
-    borderRadius: 20,
+    borderRadius: 28,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowColor: "#16151d",
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 8,
   },
   card: {
     width: "100%",
@@ -478,51 +437,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backfaceVisibility: "hidden",
   },
+  cardFront: {
+    backgroundColor: "#ffffff",
+  },
+  cardBack: {
+    backgroundColor: "#4f40d8",
+  },
   swipeHintLeft: {
     position: "absolute",
-    top: 24,
-    left: 20,
+    top: 20,
+    right: 20,
     zIndex: 20,
-    borderWidth: 3,
-    borderColor: "#DC2626",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    transform: [{ rotate: "-12deg" }],
+    borderWidth: 2,
+    borderColor: "#d9492f",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: "#ffffff",
+    transform: [{ rotate: "6deg" }],
   },
   swipeHintLeftText: {
-    color: "#DC2626",
-    fontWeight: "800",
-    fontSize: 16,
-  },
-  swipeHintLeftSub: {
-    color: "#DC2626",
-    fontSize: 11,
+    color: "#d9492f",
     fontWeight: "600",
+    fontSize: 14,
   },
   swipeHintRight: {
     position: "absolute",
-    top: 24,
-    right: 20,
+    top: 20,
+    left: 20,
     zIndex: 20,
-    borderWidth: 3,
-    borderColor: "#16A34A",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    transform: [{ rotate: "12deg" }],
+    borderWidth: 2,
+    borderColor: "#13865d",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    backgroundColor: "#ffffff",
+    transform: [{ rotate: "-6deg" }],
   },
   swipeHintRightText: {
-    color: "#16A34A",
-    fontWeight: "800",
-    fontSize: 16,
-  },
-  swipeHintRightSub: {
-    color: "#16A34A",
-    fontSize: 11,
+    color: "#13865d",
     fontWeight: "600",
+    fontSize: 14,
   },
   noCardsContainer: {
     flex: 1,
@@ -531,28 +486,75 @@ const styles = StyleSheet.create({
   },
   noCardsText: {
     fontSize: 20,
-    color: "#8B9CB6",
+    color: "#6f6d7b",
     fontWeight: "600",
   },
   hintSubtext: {
     marginTop: 8,
     fontSize: 14,
-    color: "#94A3B8",
+    color: "#6f6d7b",
   },
   cardContent: {
     width: "100%",
     height: "100%",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 30,
-    paddingVertical: 40,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
-  cardText: {
-    fontSize: 28,
-    fontWeight: "700",
+  faceLabel: {
+    alignSelf: "flex-start",
+    fontSize: 11,
+    letterSpacing: 1.54,
+    textTransform: "uppercase",
+    color: "#6f6d7b",
+    fontFamily: "GeistMono_400Regular",
+  },
+  faceLabelBack: {
+    alignSelf: "flex-start",
+    fontSize: 11,
+    letterSpacing: 1.54,
+    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.6)",
+    fontFamily: "GeistMono_400Regular",
+  },
+  cardTextFront: {
+    flex: 1,
     textAlign: "center",
-    lineHeight: 36,
+    textAlignVertical: "center",
+    fontSize: 36,
+    fontWeight: "600",
+    letterSpacing: -1.26,
+    lineHeight: 40,
+    color: "#16151d",
+    fontFamily: "Geist_600SemiBold",
+  },
+  cardTextBackPrompt: {
+    fontSize: 15,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
+    fontFamily: "Geist_400Regular",
+  },
+  cardTextBack: {
+    marginTop: 8,
+    fontSize: 36,
+    fontWeight: "600",
+    letterSpacing: -1.26,
+    lineHeight: 40,
     color: "#ffffff",
+    textAlign: "center",
+    fontFamily: "Geist_600SemiBold",
+  },
+  flipHint: {
+    fontSize: 12,
+    color: "#6f6d7b",
+    fontFamily: "Geist_400Regular",
+  },
+  flipHintBack: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.6)",
+    textAlign: "center",
+    fontFamily: "Geist_400Regular",
   },
 });
 

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/userStore";
+import { API_BASE_URL } from "./apiConfig";
 import axiosInstance from "./AxiosInstance";
 import { useDeskStore } from "../stores/deckStore";
 
@@ -12,25 +13,27 @@ export async function createDesk(
   const accessToken = useAuthStore.getState().auth.accessToken;
   const UserId = useAuthStore.getState().user.id;
 
-  const data = {
-    Title: Title,
-    Description: Description,
-    UserID: UserId, // Change from UserId to UserID
-    ImageUrl: ImageLink, // Change from ImageLink to ImageUrl
-  };
-
   const headers = {
     "Content-Type": "application/json",
     Authorization: `Bearer ${refreshToken}`, // Token'ı Bearer formatında gönderme
     "X-Access-Token": `Bearer ${accessToken}`, // Aynı token'ı farklı bir header olarak da gönderme
   };
 
+  // Backend rejects empty Title/Description; ImageUrl may be omitted/empty.
+  const payload = {
+    Title: Title,
+    Description: Description,
+    UserID: UserId,
+    ...(ImageLink ? { ImageUrl: ImageLink } : {}),
+  };
+
   try {
     const response = await axios.post(
-      "https://api.wordlingo.me/create-desk",
-      data,
+      `${API_BASE_URL}/create-desk`,
+      payload,
       { headers }
     );
+    // Local API returns 202 Accepted with { desk_id, title, description }
     console.log("Desk created successfully:", response.data.desk_id);
     useDeskStore.getState().setDesk({
       id: response.data.desk_id,
@@ -45,11 +48,14 @@ export async function createDesk(
       error.response.status === 400 &&
       error.response.headers["x-new-access-token"]
     ) {
-      const newAccessToken = error.response.headers["x-new-access-token"];
-      console.log("Received new access token:", newAccessToken);
-
-      newAccessToken(newAccessToken);
+      const rotated = error.response.headers["x-new-access-token"];
+      console.log("Received new access token:", rotated);
+      useAuthStore.getState().setAuthData({
+        auth: { accessToken: rotated },
+      });
     }
+    console.error("createDesk failed:", error.response?.status, error.response?.data || error.message);
+    throw error;
   }
 }
 
@@ -114,7 +120,7 @@ export async function updateDeck(
   const data = {
     Title: Title,
     Description: Description,
-    ImageUrl: ImageLink, // Change from ImageLink to ImageUrl
+    ...(ImageLink ? { ImageUrl: ImageLink } : {}),
   };
 
   const headers = {
@@ -129,7 +135,11 @@ export async function updateDeck(
     });
     return response;
   } catch (error: any) {
-    console.error("Error in updateDeck:", error);
+    console.error(
+      "Error in updateDeck:",
+      error.response?.status,
+      error.response?.data || error.message
+    );
     throw error;
   }
 }

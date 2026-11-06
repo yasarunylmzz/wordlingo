@@ -1,4 +1,5 @@
 import axios from "axios";
+import { API_BASE_URL } from "./apiConfig";
 
 export async function loginUser(email: string, password: string) {
   const data = {
@@ -7,7 +8,8 @@ export async function loginUser(email: string, password: string) {
   };
 
   try {
-    const response = await axios.post("https://api.wordlingo.me/login", data);
+    console.log("Login API base:", API_BASE_URL);
+    const response = await axios.post(`${API_BASE_URL}/login`, data);
     console.log("Response:", response.status);
     console.log(response.headers);
     return response;
@@ -32,11 +34,23 @@ export async function createUser(
     password: password,
   };
   try {
-    const response = axios.post("https://api.wordlingo.me/createuser", data);
+    const response = await axios.post(`${API_BASE_URL}/createuser`, data);
     return response;
   } catch (error) {
     console.error("Error:", error);
+    throw error;
   }
+}
+
+/**
+ * Request a password-reset email.
+ * API gap: backend has no `/forgot-password` (or equivalent) yet.
+ * Call sites should surface an honest UI until this is implemented.
+ */
+export async function forgotPassword(_email: string): Promise<never> {
+  throw new Error(
+    "forgotPassword API is not available yet (no /forgot-password endpoint).",
+  );
 }
 
 export async function verification(id: string, email: string, code: string) {
@@ -46,7 +60,7 @@ export async function verification(id: string, email: string, code: string) {
     code: code,
   };
   try {
-    const response = axios.post("https://api.wordlingo.me/verification", data);
+    const response = axios.post(`${API_BASE_URL}/verification`, data);
     return response;
   } catch (error) {
     console.error("Error:", error);

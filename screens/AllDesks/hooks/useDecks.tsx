@@ -20,7 +20,9 @@ export const useDecks = () => {
 
     try {
       const response = await getAllDecks(userId);
-      setDeskList(response.data.data);
+      // Backend: { data: [{ ID, Title, Description, cardCount, ... }] }
+      const rows = response?.data?.data;
+      setDeskList(Array.isArray(rows) ? rows : []);
     } catch (error) {
       console.error("Error fetching decks:", error);
     }
@@ -33,7 +35,8 @@ export const useDecks = () => {
     setRefreshing(true);
     try {
       const response = await getAllDecks(userId);
-      setDeskList(response.data.data);
+      const rows = response?.data?.data;
+      setDeskList(Array.isArray(rows) ? rows : []);
     } catch (error) {
       console.error("Error refreshing decks:", error);
     } finally {

@@ -69,10 +69,12 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
 *.tsbuildinfo
 
-# @end expo-cliandroid/
+# @end expo-cli
+android/
 ios/
