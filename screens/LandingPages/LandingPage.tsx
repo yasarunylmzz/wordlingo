@@ -1,7 +1,9 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   Animated,
   Easing,
+  LayoutChangeEvent,
   Pressable,
   StyleSheet,
   View,
@@ -27,24 +29,75 @@ const wordRows: { words: string[]; duration: number }[] = [
 ];
 
 const HIGHLIGHT_ROW = 3;
+/** Matches prototype `LENS_INSET = "17%"`. */
+const LENS_INSET = 0.17;
 
+function useReduceMotion() {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => {
+      if (mounted) setReduce(!!v);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduce,
+    );
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, []);
+  return reduce;
+}
+
+function MarqueeWords({
+  words,
+  color,
+}: {
+  words: string[];
+  color: string;
+}) {
+  return (
+    <>
+      {[...words, ...words].map((w, i) => (
+        <AppText
+          key={`${w}-${i}`}
+          weight="semibold"
+          style={[styles.marqueeWord, { color }]}
+        >
+          {w}
+        </AppText>
+      ))}
+    </>
+  );
+}
+
+/**
+ * Single-track marquee (non-lens rows).
+ * Animates translateX 0 → -50% of measured content (duplicated words), like CSS.
+ */
 function MarqueeRow({
   words,
   duration,
   reverse,
   color,
-  absolute,
+  reduceMotion,
 }: {
   words: string[];
   duration: number;
   reverse?: boolean;
   color: string;
-  absolute?: boolean;
+  reduceMotion: boolean;
 }) {
   const anim = useRef(new Animated.Value(0)).current;
+  const [halfWidth, setHalfWidth] = useState(0);
 
   useEffect(() => {
+    anim.stopAnimation();
     anim.setValue(0);
+    if (reduceMotion || halfWidth <= 0) return;
+
     const loop = Animated.loop(
       Animated.timing(anim, {
         toValue: 1,
@@ -55,38 +108,126 @@ function MarqueeRow({
     );
     loop.start();
     return () => loop.stop();
-  }, [anim, duration]);
+  }, [anim, duration, halfWidth, reduceMotion]);
 
   const translateX = anim.interpolate({
     inputRange: [0, 1],
-    outputRange: reverse ? [-200, 0] : [0, -200],
+    outputRange: reverse ? [-halfWidth, 0] : [0, -halfWidth],
   });
 
-  const content = [...words, ...words].map((w, i) => (
-    <AppText
-      key={`${w}-${i}`}
-      weight="semibold"
-      style={[styles.marqueeWord, { color }]}
-    >
-      {w}
-    </AppText>
-  ));
-
   return (
-    <View
-      style={[styles.marqueeClip, absolute && StyleSheet.absoluteFillObject]}
-      pointerEvents="none"
-    >
+    <View style={styles.marqueeClip} pointerEvents="none">
       <Animated.View
         style={[styles.marqueeTrack, { transform: [{ translateX }] }]}
+        onLayout={(e: LayoutChangeEvent) => {
+          const w = e.nativeEvent.layout.width;
+          if (w > 0) setHalfWidth(w / 2);
+        }}
       >
-        {content}
+        <MarqueeWords words={words} color={color} />
       </Animated.View>
     </View>
   );
 }
 
+/**
+ * Highlight row: white lens + faded outer marquee + accent duplicate clipped to lens.
+ * Prototype uses one CSS animation + `clip-path: inset(0 17% round 18px)` on a
+ * full-width overlay. RN equivalent: shared Animated.Value; clip view inset 17%;
+ * accent track shifted left by `lensLeft` so glyphs stay pixel-synced with the outer row.
+ */
+function LensMarqueeRow({
+  words,
+  duration,
+  reverse,
+  reduceMotion,
+}: {
+  words: string[];
+  duration: number;
+  reverse?: boolean;
+  reduceMotion: boolean;
+}) {
+  const anim = useRef(new Animated.Value(0)).current;
+  const [rowWidth, setRowWidth] = useState(0);
+  const [halfWidth, setHalfWidth] = useState(0);
+
+  const lensLeft = rowWidth * LENS_INSET;
+
+  useEffect(() => {
+    anim.stopAnimation();
+    anim.setValue(0);
+    if (reduceMotion || halfWidth <= 0) return;
+
+    const loop = Animated.loop(
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: duration * 1000,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [anim, duration, halfWidth, reduceMotion]);
+
+  const translateX = useMemo(
+    () =>
+      anim.interpolate({
+        inputRange: [0, 1],
+        outputRange: reverse ? [-halfWidth, 0] : [0, -halfWidth],
+      }),
+    [anim, halfWidth, reverse],
+  );
+
+  const onTrackLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0) setHalfWidth(w / 2);
+  };
+
+  return (
+    <View
+      style={styles.lensRow}
+      onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}
+      pointerEvents="none"
+    >
+      {/* White lens plate */}
+      <View style={styles.lens} />
+
+      {/* Outer faded row — full width */}
+      <View style={styles.marqueeClip}>
+        <Animated.View
+          style={[styles.marqueeTrack, { transform: [{ translateX }] }]}
+          onLayout={onTrackLayout}
+        >
+          <MarqueeWords words={words} color="rgba(255,255,255,0.4)" />
+        </Animated.View>
+      </View>
+
+      {/* Accent duplicate: clipped to lens; track offset by -lensLeft so it
+          shares the same coordinate space as the outer row (prototype clip-path). */}
+      {rowWidth > 0 && (
+        <View style={[styles.lensClip, { left: lensLeft, right: lensLeft }]}>
+          <Animated.View
+            style={[
+              styles.marqueeTrack,
+              {
+                // Pull content back so x=0 matches the parent row, not the clip.
+                marginLeft: -lensLeft,
+                transform: [{ translateX }],
+              },
+            ]}
+          >
+            <MarqueeWords words={words} color={colors.accent} />
+          </Animated.View>
+        </View>
+      )}
+    </View>
+  );
+}
+
 function WordHero() {
+  const reduceMotion = useReduceMotion();
+
   return (
     <View style={styles.hero}>
       <View style={styles.heroTop}>
@@ -98,27 +239,18 @@ function WordHero() {
       <View style={styles.heroMarquee}>
         {wordRows.map((row, i) =>
           i === HIGHLIGHT_ROW ? (
-            <View key={i} style={styles.lensRow}>
-              <View style={styles.lens} />
-              <MarqueeRow
-                {...row}
-                reverse={i % 2 === 1}
-                color="rgba(255,255,255,0.4)"
-              />
-              <View style={styles.lensClip} pointerEvents="none">
-                <MarqueeRow
-                  {...row}
-                  reverse={i % 2 === 1}
-                  color={colors.accent}
-                  absolute
-                />
-              </View>
-            </View>
+            <LensMarqueeRow
+              key={i}
+              {...row}
+              reverse={i % 2 === 1}
+              reduceMotion={reduceMotion}
+            />
           ) : (
             <MarqueeRow
               key={i}
               {...row}
               reverse={i % 2 === 1}
+              reduceMotion={reduceMotion}
               color={
                 Math.abs(i - HIGHLIGHT_ROW) === 1
                   ? "rgba(255,255,255,0.3)"
@@ -211,7 +343,7 @@ const styles = StyleSheet.create({
   },
   marqueeTrack: {
     flexDirection: "row",
-    width: 2000,
+    alignSelf: "flex-start",
   },
   marqueeWord: {
     paddingRight: 28,
@@ -227,8 +359,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     bottom: 0,
-    left: "17%",
-    right: "17%",
+    left: `${LENS_INSET * 100}%`,
+    right: `${LENS_INSET * 100}%`,
     borderRadius: 18,
     backgroundColor: colors.white,
     shadowColor: "#140c5a",
@@ -238,9 +370,9 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   lensClip: {
-    ...StyleSheet.absoluteFillObject,
-    left: "17%",
-    right: "17%",
+    position: "absolute",
+    top: 0,
+    bottom: 0,
     borderRadius: 18,
     overflow: "hidden",
   },
