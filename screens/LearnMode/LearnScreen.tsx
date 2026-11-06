@@ -21,6 +21,7 @@ import {
   uniqueAnswers,
   type QuizQuestion,
 } from "../../domain/learning/quiz";
+import { queueLevelZeroRetry } from "../../domain/learning/session";
 import type { QuizDirection, StudyMode } from "../../domain/learning/types";
 import {
   finishSession,
@@ -46,7 +47,7 @@ const LearnScreen = () => {
   const {
     deckId,
     deckTitle,
-    mode: routeMode = "normal",
+    mode: routeMode = "today",
     shuffle: routeShuffle = true,
     hideMastered: routeHideMastered = false,
     quizDirection: routeDirection = "w1-w2",
@@ -76,6 +77,7 @@ const LearnScreen = () => {
   const wrongCardIdsRef = useRef<string[]>([]);
   const answeredIdsRef = useRef<string[]>([]);
   const didStart = useRef(false);
+  const levelZeroRetriedRef = useRef(new Set<string>());
 
   const startQuiz = useCallback(
     (overrideCards?: { cardIds?: string[] }) => {
@@ -84,6 +86,7 @@ const LearnScreen = () => {
       wrongRef.current = 0;
       wrongCardIdsRef.current = [];
       answeredIdsRef.current = [];
+      levelZeroRetriedRef.current = new Set();
       setCorrectCount(0);
       setWrongCount(0);
       setIndex(0);
@@ -102,7 +105,9 @@ const LearnScreen = () => {
           correctCount: 0,
           wrongCount: 0,
           isHard: false,
-          lastStudiedAt: null,
+          lastStudiedAt: 0,
+          dueAt: 0,
+          intervalDays: 0,
         })),
         direction,
       );
@@ -197,11 +202,24 @@ const LearnScreen = () => {
         correctRef.current = next;
         setCorrectCount(next);
       } else {
-        learning.applyWrong(q.cardId);
+        const updated = learning.applyWrong(q.cardId);
         wrongCardIdsRef.current = [...wrongCardIdsRef.current, q.cardId];
         const next = wrongRef.current + 1;
         wrongRef.current = next;
         setWrongCount(next);
+        if (updated?.learningLevel === 0) {
+          const queued = queueLevelZeroRetry(
+            questions,
+            q,
+            updated.learningLevel,
+            levelZeroRetriedRef.current,
+            (item) => item.cardId,
+          );
+          if (queued.length !== questions.length) {
+            levelZeroRetriedRef.current.add(q.cardId);
+            setQuestions(queued);
+          }
+        }
       }
       answeredIdsRef.current = [...answeredIdsRef.current, q.cardId];
       setPicked(option);

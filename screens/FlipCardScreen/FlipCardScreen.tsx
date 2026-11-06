@@ -24,7 +24,7 @@ const FlipCardScreen = () => {
   const {
     deckId,
     deckTitle,
-    mode = "normal",
+    mode = "today",
     shuffle = true,
     hideMastered = false,
   } = route.params;

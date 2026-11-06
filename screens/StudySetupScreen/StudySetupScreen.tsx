@@ -45,14 +45,14 @@ const EXERCISES: {
 ];
 
 const MODES: { id: StudyMode; title: string; hint: string }[] = [
+  { id: "today", title: "Bugün", hint: "Vadesi gelen kartlar" },
   { id: "normal", title: "Normal", hint: "Destedeki tüm kartlar" },
   { id: "wrong", title: "Yanlışlar", hint: "Daha önce yanlış bildiklerin" },
-  { id: "forgotten", title: "Unutulanlar", hint: "Tekrar zamanı gelenler" },
   { id: "hard", title: "Zor", hint: "Zor olarak işaretlediklerin" },
   {
     id: "review",
     title: "Karışık tekrar",
-    hint: "Yanlış, unutulan ve zor kartlar",
+    hint: "Desteden karışık bir tur",
   },
 ];
 
@@ -77,7 +77,7 @@ const StudySetupScreen = () => {
   );
 
   const [exercise, setExercise] = useState<StudyExercise>("quiz");
-  const [mode, setMode] = useState<StudyMode>("normal");
+  const [mode, setMode] = useState<StudyMode>("today");
   const [shuffle, setShuffle] = useState(true);
   const [hideMastered, setHideMastered] = useState(false);
   const [quizDirection, setQuizDirection] =
@@ -270,7 +270,9 @@ const StudySetupScreen = () => {
                   Karıştır
                 </AppText>
                 <AppText style={styles.optionHint}>
-                  Kartları rastgele sırala
+                  {mode === "today"
+                    ? "Aynı günün içinde karıştırır; eski günler önde kalır"
+                    : "Kartları rastgele sırala"}
                 </AppText>
               </View>
               <Switch
@@ -285,7 +287,9 @@ const StudySetupScreen = () => {
                   Öğrenilenleri gizle
                 </AppText>
                 <AppText style={styles.optionHint}>
-                  Seviye 3 kartları atla
+                  {mode === "today"
+                    ? "Bugün kuyruğunda vadesi gelen seviye 3 kalır"
+                    : "Seviye 3 kartları atla"}
                 </AppText>
               </View>
               <Switch
