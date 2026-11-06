@@ -143,31 +143,39 @@ const OnboardingScreen = () => {
 
 function WordStage() {
   return (
-    <View style={styles.wordWrap}>
-      <View style={styles.wordShadow} />
-      <View style={styles.wordCard}>
-        <AppText weight="mono" style={styles.cardMono}>
-          {"Günün kelimesi".toLocaleUpperCase("tr-TR")}
-        </AppText>
-        <View style={styles.wordCenter}>
-          <AppText weight="semibold" style={styles.wordBig}>
-            Güneş
+    // Outer box is larger than the card so the 7° plate + badge can peek
+    // without being clipped by the stage (matches prototype stacking).
+    <View style={styles.wordScene}>
+      <View style={styles.wordWrap}>
+        {/* Accent plate behind — rotate 7° like prototype */}
+        <View style={styles.wordPlate} />
+        {/* Front card: explicit size (not absoluteFill) so flex center lays out */}
+        <View style={styles.wordCard}>
+          <AppText weight="mono" style={styles.cardMono}>
+            {"Günün kelimesi".toLocaleUpperCase("tr-TR")}
           </AppText>
-          <AppText weight="mono" style={styles.wordAccent}>
-            sun
+          <View style={styles.wordCenter}>
+            <AppText weight="semibold" style={styles.wordBig}>
+              Güneş
+            </AppText>
+            <AppText weight="mono" style={styles.wordAccent}>
+              sun
+            </AppText>
+          </View>
+          <View style={styles.wordExampleBlock}>
+            <AppText style={styles.wordExample}>
+              Bugün güneş çok parlak.
+            </AppText>
+            <AppText style={styles.wordExampleEn}>
+              The sun is very bright today.
+            </AppText>
+          </View>
+        </View>
+        <View style={styles.wordBadge}>
+          <AppText weight="semibold" style={styles.wordBadgeText}>
+            +5 kelime bugün
           </AppText>
         </View>
-        <AppText style={styles.wordExample}>
-          Bugün güneş çok parlak.{"\n"}
-          <AppText style={{ color: "rgba(22,21,29,0.7)" }}>
-            The sun is very bright today.
-          </AppText>
-        </AppText>
-      </View>
-      <View style={styles.wordBadge}>
-        <AppText weight="semibold" style={styles.wordBadgeText}>
-          +5 kelime bugün
-        </AppText>
       </View>
     </View>
   );
@@ -290,11 +298,12 @@ function HabitStage() {
 export default OnboardingScreen;
 
 const cardShadow = {
-  shadowColor: "#2e22a0",
-  shadowOpacity: 0.35,
+  // Prototype: 0 1px 2px soft + 0 20px 40px -20px purple
+  shadowColor: "rgba(46,34,160,0.35)",
+  shadowOpacity: 1,
   shadowRadius: 20,
   shadowOffset: { width: 0, height: 10 },
-  elevation: 6,
+  elevation: 8,
 };
 
 const styles = StyleSheet.create({
@@ -377,18 +386,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  wordWrap: { width: 220, height: 250 },
-  wordShadow: {
-    ...StyleSheet.absoluteFillObject,
+  /** Padding around the 220×250 card so plate rotation + badge aren’t clipped. */
+  wordScene: {
+    width: 260,
+    height: 290,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  wordWrap: {
+    width: 220,
+    height: 250,
+  },
+  wordPlate: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: 220,
+    height: 250,
     borderRadius: 26,
     backgroundColor: colors.accent,
     transform: [{ rotate: "7deg" }],
+    zIndex: 0,
   },
   wordCard: {
-    ...StyleSheet.absoluteFillObject,
+    width: 220,
+    height: 250,
     borderRadius: 26,
     backgroundColor: colors.white,
-    padding: space[5],
+    padding: 20,
+    zIndex: 1,
     ...cardShadow,
   },
   cardMono: {
@@ -401,21 +427,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  wordBig: { fontSize: 34, letterSpacing: -1.19, lineHeight: 34 },
-  wordAccent: { marginTop: 8, fontSize: 13, color: colors.accent },
-  wordExample: {
+  wordBig: {
+    fontSize: 34,
+    letterSpacing: -1.19,
+    lineHeight: 34,
+    color: colors.ink,
+    textAlign: "center",
+  },
+  wordAccent: {
+    marginTop: 8,
+    fontSize: 13,
+    color: colors.accent,
+    textAlign: "center",
+  },
+  wordExampleBlock: {
     borderTopWidth: StyleSheet.hairlineWidth * 2,
     borderTopColor: colors.line,
     paddingTop: 12,
+  },
+  wordExample: {
     textAlign: "center",
     fontSize: 12,
     lineHeight: 17,
     color: colors.muted,
   },
+  wordExampleEn: {
+    textAlign: "center",
+    fontSize: 12,
+    lineHeight: 17,
+    color: "rgba(22,21,29,0.7)",
+  },
   wordBadge: {
     position: "absolute",
     right: -20,
     top: -12,
+    zIndex: 2,
     borderRadius: radii.full,
     backgroundColor: colors.ink,
     paddingHorizontal: 12,
