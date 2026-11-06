@@ -31,7 +31,9 @@ export type RootStackParamList = {
   SearchScreen: undefined;
   AllDecks: undefined;
   CreateDeck: undefined;
-  CardDecks: { deckId: string; deckTitle: string };
+  CardDecks: { deckId: string; deckTitle: string; initialAdding?: boolean };
+  Onboarding: undefined;
+  Welcome: undefined;
   MyAccount: undefined;
   FaceId: undefined;
   HelpAndSupport: undefined;

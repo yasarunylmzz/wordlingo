@@ -20,8 +20,9 @@ import { colors } from "../../theme/theme";
 
 const CardDecks: React.FC = () => {
   const route = useRoute<RouteProp<RootStackParamList, "CardDecks">>();
-  const { deckId, deckTitle } = route.params;
+  const { deckId, deckTitle, initialAdding = false } = route.params;
   const [loading, setLoading] = useState(false);
+  const didOpenAdd = React.useRef(false);
 
   const { setCards: setStoreCards, getCards } = useCardStore();
   const currentCards = getCards(deckId);
@@ -87,6 +88,14 @@ const CardDecks: React.FC = () => {
       );
     }
   }, [deckId]);
+
+  useEffect(() => {
+    if (!initialAdding || didOpenAdd.current) return;
+    didOpenAdd.current = true;
+    openAddModal();
+    // Intentionally only on mount / initialAdding — openAddModal is unstable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAdding]);
 
   const mapped = cards.map((card) => ({
     id: card.ID,

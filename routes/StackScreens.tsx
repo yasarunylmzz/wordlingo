@@ -1,5 +1,6 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import LandingPages from "../screens/LandingPages/LandingPage";
+import OnboardingScreen from "../screens/OnboardingScreen/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen/LoginScreen";
 import SignInScreen from "../screens/SignInScreen/SignInScreen";
 import HomePage from "../screens/HomeScreen/HomeScreen";
@@ -22,6 +23,7 @@ import CreateCard from "../screens/CreateCardScreen/CreateCardScreen";
 import SplashScreen from "../screens/SplashScreen/SplashScreen";
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../stores/userStore";
+import { usePrefsStore } from "../stores/prefsStore";
 import { jwtDecode, JwtPayload } from "jwt-decode";
 import { RootStackParamList } from "../screens/RootStackParams";
 
@@ -29,6 +31,7 @@ const Stack = createStackNavigator<RootStackParamList>();
 
 function StackScreens() {
   const refreshToken = useAuthStore((state) => state.auth.refreshToken);
+  const onboardingSeen = usePrefsStore((state) => state.onboardingSeen);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -110,13 +113,15 @@ function StackScreens() {
     </Stack.Navigator>
   ) : (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName={onboardingSeen ? "Welcome" : "Onboarding"}
       screenOptions={{
         headerStyle: { elevation: 0 },
         cardStyle: { backgroundColor: "#f5f5f8" },
         headerShown: false,
       }}
     >
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+      <Stack.Screen name="Welcome" component={LandingPages} />
       <Stack.Screen name="Home" component={LandingPages} />
       <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="SignIn" component={SignInScreen} />

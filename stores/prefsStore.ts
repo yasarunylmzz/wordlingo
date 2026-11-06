@@ -38,11 +38,14 @@ export type TodoItem = {
 type PrefsState = {
   goalMinutes: number;
   notifications: boolean;
+  /** First-launch onboarding completed (steps → welcome). */
+  onboardingSeen: boolean;
   deckTones: Record<string, number>;
   recentSearches: string[];
   todos: TodoItem[];
   setGoalMinutes: (n: number) => void;
   setNotifications: (v: boolean) => void;
+  setOnboardingSeen: (v: boolean) => void;
   setDeckTone: (deckId: string, tone: number) => void;
   getDeckTone: (deckId: string, fallbackIndex?: number) => number;
   addRecentSearch: (word: string) => void;
@@ -69,11 +72,13 @@ export const usePrefsStore = create<PrefsState>()(
     (set, get) => ({
       goalMinutes: 20,
       notifications: true,
+      onboardingSeen: false,
       deckTones: {},
       recentSearches: [],
       todos: defaultTodos,
       setGoalMinutes: (goalMinutes) => set({ goalMinutes }),
       setNotifications: (notifications) => set({ notifications }),
+      setOnboardingSeen: (onboardingSeen) => set({ onboardingSeen }),
       setDeckTone: (deckId, tone) =>
         set((s) => ({
           deckTones: { ...s.deckTones, [deckId]: tone },
@@ -122,6 +127,7 @@ export const usePrefsStore = create<PrefsState>()(
       partialize: (s) => ({
         goalMinutes: s.goalMinutes,
         notifications: s.notifications,
+        onboardingSeen: s.onboardingSeen,
         deckTones: s.deckTones,
         recentSearches: s.recentSearches,
         todos: s.todos,
