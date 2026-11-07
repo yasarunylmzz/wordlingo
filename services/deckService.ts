@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "../stores/userStore";
+import { API_BASE_URL } from "./apiConfig";
 import axiosInstance from "./AxiosInstance";
 import { useDeskStore } from "../stores/deckStore";
 
@@ -27,7 +28,7 @@ export async function createDesk(
 
   try {
     const response = await axios.post(
-      "https://api.wordlingo.me/create-desk",
+      `${API_BASE_URL}/create-desk`,
       data,
       { headers }
     );
