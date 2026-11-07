@@ -8,24 +8,24 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "googleServicesFile": "./GoogleService-Info.plist",
+      "bundleIdentifier": "com.yasarunylmzz.wordLingo",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsLocalNetworking": true
         }
       }
     },
-
     "android": {
-      "package": "com.yasarunylmzz.wordLingo",
-      "googleServicesFile": "./google-services.json"
+      "package": "com.yasarunylmzz.wordLingo"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-secure-store",
-      "@react-native-google-signin/google-signin"
+      "expo-dev-client",
+      "expo-font",
+      "expo-audio"
     ]
   }
 }

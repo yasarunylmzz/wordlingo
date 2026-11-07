@@ -9,10 +9,8 @@ import {
   TouchableOpacity,
   ListRenderItem,
 } from "react-native";
-import {
-  GestureHandlerRootView,
-  Swipeable,
-} from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import EditIcon from "../../../svg/EditIcon";
 import GarbageIcon from "../../../svg/GarbageIcon";
 

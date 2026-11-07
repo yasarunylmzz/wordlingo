@@ -55,7 +55,8 @@ const InputSection = () => {
       if (response.status === 200) {
         console.log("response-status:", response.status);
         console.log("response-data:", response.headers);
-        navigation.navigate("BottomScreen");
+        // Auth update remounts the authenticated stack (BottomScreen).
+        // Avoid navigating to a screen missing from the pre-login navigator.
       } else if (response.status === 203) {
         navigation.navigate("TwoFactorAuth");
       }
