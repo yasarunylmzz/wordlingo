@@ -2,312 +2,366 @@ import React, { useState } from "react";
 import {
   View,
   ScrollView,
-  SafeAreaView,
   StyleSheet,
-  Modal,
-  Text,
-  TouchableOpacity,
-  Animated,
+  Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuthStore } from "../../stores/userStore";
-import { useCardStore } from "../../stores/cardStore";
-import { useLearningStore } from "../../stores/learningStore";
+import { usePrefsStore } from "../../stores/prefsStore";
 import ProfileHeader from "./components/ProfileHeader";
 import LogoutButton from "./components/LogoutButton";
+import Sheet from "../../Components/ui/Sheet";
+import Field from "../../Components/ui/Field";
+import AppText from "../../Components/ui/AppText";
+import { colors, radii, space } from "../../theme/theme";
+
+const goalOptions = [10, 20, 30, 45];
 
 const ProfileScreen = ({ navigation }: any) => {
-  const username = useAuthStore((state) => state.user.username);
-  const name = useAuthStore((state) => state.user.name);
-  const surname = useAuthStore((state) => state.user.surname);
-  const email = useAuthStore((state) => state.user.email);
+  const username = useAuthStore((state) => state.user.username) ?? "";
+  const name = useAuthStore((state) => state.user.name) ?? "";
+  const surname = useAuthStore((state) => state.user.surname) ?? "";
+  const email = useAuthStore((state) => state.user.email) ?? "";
+  const setAuthData = useAuthStore((state) => state.setAuthData);
 
-  const cards = useCardStore((state) => state.cards);
-  const byCardId = useLearningStore((state) => state.byCardId);
+  const goalMinutes = usePrefsStore((s) => s.goalMinutes);
+  const notifications = usePrefsStore((s) => s.notifications);
+  const setGoalMinutes = usePrefsStore((s) => s.setGoalMinutes);
+  const setNotifications = usePrefsStore((s) => s.setNotifications);
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({
+    firstName: name,
+    lastName: surname,
+    username,
+    email,
+  });
 
-  const handleSettingsPress = () => {
-    setShowSettingsModal(true);
-  };
-
-  const handleEditProfile = () => {
-    setShowSettingsModal(false);
-    navigation.navigate("MyAccount");
-  };
-
-  // Stats hesaplama
-  const totalDecks = Object.keys(cards).length;
-  const totalCards = Object.values(cards).reduce(
-    (total, deckCards) => total + deckCards.length,
-    0
-  );
-  const learnedCount = Object.values(byCardId).filter(
-    (state) => state.learningLevel === 3
-  ).length;
-
-  const StatsComponent = () => (
-    <View style={styles.statsContainer}>
-      <Text style={styles.sectionTitle}>Statistics</Text>
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{totalDecks}</Text>
-          <Text style={styles.statLabel}>Desks</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{totalCards}</Text>
-          <Text style={styles.statLabel}>Cards</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statNumber}>{learnedCount}</Text>
-          <Text style={styles.statLabel}>Learned</Text>
-        </View>
-      </View>
-    </View>
-  );
-
-  const UserInfoComponent = () => (
-    <View style={styles.userInfoContainer}>
-      <Text style={styles.sectionTitle}>Personal Information</Text>
-      <View style={styles.infoGrid}>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>First Name</Text>
-          <Text style={styles.infoValue}>{name}</Text>
-        </View>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Last Name</Text>
-          <Text style={styles.infoValue}>{surname}</Text>
-        </View>
-        <View style={styles.infoCard}>
-          <Text style={styles.infoLabel}>Username</Text>
-          <Text style={styles.infoValue}>@{username}</Text>
-        </View>
-        {email && (
-          <View style={[styles.infoCard, styles.fullWidth]}>
-            <Text style={styles.infoLabel}>Email</Text>
-            <Text style={styles.infoValue}>{email}</Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
+  const rows: {
+    key: "firstName" | "lastName" | "username" | "email";
+    label: string;
+    value: string;
+  }[] = [
+    { key: "firstName", label: "Ad", value: name },
+    { key: "lastName", label: "Soyad", value: surname },
+    { key: "username", label: "Kullanıcı adı", value: username },
+    { key: "email", label: "E-posta", value: email },
+  ];
 
   return (
-    <View style={styles.container}>
-      <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={{ alignItems: "center", paddingBottom: 30 }}
-          showsVerticalScrollIndicator={false}
-        >
-          <ProfileHeader
-            name={name!}
-            surname={surname!}
-            username={username!}
-            onSettingsPress={handleSettingsPress}
-          />
-
-          <UserInfoComponent />
-
-          <StatsComponent />
-        </ScrollView>
-      </SafeAreaView>
-
-      <Modal
-        visible={showSettingsModal}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowSettingsModal(false)}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalBackground}
-            onPress={() => setShowSettingsModal(false)}
-          />
-          <View style={styles.bottomPanel}>
-            <View style={styles.panelIndicator} />
-            <View style={styles.panelHeader}>
-              <Text style={styles.panelTitle}>Settings</Text>
-              <TouchableOpacity
-                onPress={() => setShowSettingsModal(false)}
-                style={styles.closeButton}
+        <ProfileHeader
+          name={name}
+          surname={surname}
+          username={username}
+          onSettingsPress={() => setShowSettingsModal(true)}
+        />
+
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <AppText style={styles.sectionTitle}>Kişisel bilgiler</AppText>
+            {!editing && (
+              <Pressable
+                onPress={() => {
+                  setDraft({
+                    firstName: name,
+                    lastName: surname,
+                    username,
+                    email,
+                  });
+                  setEditing(true);
+                }}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.settingOption}
-              onPress={handleEditProfile}
-            >
-              <Text style={styles.settingOptionText}>Edit Profile</Text>
-            </TouchableOpacity>
-
-            <View style={styles.logoutContainer}>
-              <LogoutButton />
-            </View>
+                <AppText weight="semibold" style={styles.edit}>
+                  Düzenle
+                </AppText>
+              </Pressable>
+            )}
           </View>
+
+          {editing ? (
+            <View style={styles.editCard}>
+              <View style={styles.editRow}>
+                <View style={{ flex: 1 }}>
+                  <Field
+                    label="Ad"
+                    value={draft.firstName}
+                    onChangeText={(t) =>
+                      setDraft((d) => ({ ...d, firstName: t }))
+                    }
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Field
+                    label="Soyad"
+                    value={draft.lastName}
+                    onChangeText={(t) =>
+                      setDraft((d) => ({ ...d, lastName: t }))
+                    }
+                  />
+                </View>
+              </View>
+              <Field
+                label="Kullanıcı adı"
+                value={draft.username}
+                onChangeText={(t) => setDraft((d) => ({ ...d, username: t }))}
+              />
+              <Field
+                label="E-posta"
+                value={draft.email}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onChangeText={(t) => setDraft((d) => ({ ...d, email: t }))}
+              />
+              <View style={styles.editActions}>
+                <Pressable
+                  style={styles.cancelBtn}
+                  onPress={() => setEditing(false)}
+                >
+                  <AppText weight="semibold" style={styles.cancelText}>
+                    Vazgeç
+                  </AppText>
+                </Pressable>
+                <Pressable
+                  style={styles.saveBtn}
+                  onPress={() => {
+                    setAuthData({
+                      user: {
+                        name: draft.firstName.trim(),
+                        surname: draft.lastName.trim(),
+                        username: draft.username.trim().replace(/^@/, ""),
+                        email: draft.email.trim(),
+                      },
+                    });
+                    setEditing(false);
+                  }}
+                >
+                  <AppText weight="semibold" style={styles.saveText}>
+                    Kaydet
+                  </AppText>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.infoCard}>
+              {rows.map((r) => (
+                <View key={r.key} style={styles.infoRow}>
+                  <AppText style={styles.infoLabel}>{r.label}</AppText>
+                  <AppText weight="medium" style={styles.infoValue} numberOfLines={1}>
+                    {r.key === "username" ? `@${r.value}` : r.value}
+                  </AppText>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
-      </Modal>
-    </View>
+
+        <View style={styles.logoutWrap}>
+          <LogoutButton />
+        </View>
+      </ScrollView>
+
+      <Sheet
+        title="Ayarlar"
+        visible={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+      >
+        <View style={styles.settingsBody}>
+          <AppText weight="medium" style={styles.goalLabel}>
+            Günlük hedef
+          </AppText>
+          <View style={styles.goalTrack}>
+            {goalOptions.map((g) => (
+              <Pressable
+                key={g}
+                onPress={() => setGoalMinutes(g)}
+                style={[
+                  styles.goalBtn,
+                  goalMinutes === g && styles.goalBtnOn,
+                ]}
+              >
+                <AppText
+                  weight="medium"
+                  style={[
+                    styles.goalText,
+                    goalMinutes === g && { color: colors.accent },
+                  ]}
+                >
+                  {g} dk
+                </AppText>
+              </Pressable>
+            ))}
+          </View>
+
+          <Pressable
+            style={styles.notifRow}
+            onPress={() => setNotifications(!notifications)}
+          >
+            <View style={{ flex: 1 }}>
+              <AppText weight="medium" style={styles.notifTitle}>
+                Bildirimler
+              </AppText>
+              <AppText style={styles.notifHint}>
+                Günlük çalışma hatırlatması
+              </AppText>
+            </View>
+            <View
+              style={[
+                styles.switchTrack,
+                notifications && styles.switchTrackOn,
+              ]}
+            >
+              <View
+                style={[
+                  styles.switchKnob,
+                  notifications && styles.switchKnobOn,
+                ]}
+              />
+            </View>
+          </Pressable>
+
+          <Pressable
+            style={styles.editProfileLink}
+            onPress={() => {
+              setShowSettingsModal(false);
+              navigation.navigate("MyAccount");
+            }}
+          >
+            <AppText weight="medium" style={{ color: colors.accent }}>
+              Hesap sayfası
+            </AppText>
+          </Pressable>
+        </View>
+      </Sheet>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
+  container: { flex: 1, backgroundColor: colors.paper },
+  scrollView: { width: "100%" },
+  section: {
+    marginTop: 32,
+    paddingHorizontal: space[4],
   },
-  scrollView: {
-    width: "100%",
-  },
-  userInfoContainer: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 24,
-    marginTop: 20,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#1a1a1a",
-    marginBottom: 20,
-    textAlign: "left",
-  },
-  infoGrid: {
+  sectionHeader: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 4,
   },
+  sectionTitle: { fontSize: 13, color: colors.muted },
+  edit: { fontSize: 13, color: colors.accent },
   infoCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    width: "48%",
-    alignItems: "flex-start",
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+    marginTop: 12,
+    borderRadius: radii["2xl"],
+    backgroundColor: colors.white,
+    overflow: "hidden",
   },
-  fullWidth: {
-    width: "100%",
-  },
-  infoLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#666",
-    marginBottom: 8,
-  },
-  infoValue: {
-    fontSize: 16,
-    color: "#1a1a1a",
-    fontWeight: "500",
-  },
-  statsContainer: {
-    width: "90%",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 24,
-    marginBottom: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  statsRow: {
+  infoRow: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
+    gap: 16,
+    paddingHorizontal: space[4],
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth * 2,
+    borderBottomColor: colors.line,
+  },
+  infoLabel: { fontSize: 14, color: colors.muted },
+  infoValue: { flexShrink: 1, fontSize: 15 },
+  editCard: {
+    marginTop: 12,
+    borderRadius: radii["2xl"],
+    backgroundColor: colors.white,
+    padding: space[4],
+    gap: 16,
+  },
+  editRow: { flexDirection: "row", gap: 12 },
+  editActions: { flexDirection: "row", gap: 10, paddingTop: 4 },
+  cancelBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: colors.paper,
     alignItems: "center",
+    justifyContent: "center",
   },
-  statCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
+  cancelText: { fontSize: 14 },
+  saveBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radii.md,
+    backgroundColor: colors.accent,
     alignItems: "center",
-    flex: 1,
-    marginHorizontal: 4,
-    borderWidth: 1,
-    borderColor: "#e9ecef",
+    justifyContent: "center",
   },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 8,
+  saveText: { fontSize: 14, color: colors.white },
+  logoutWrap: {
+    marginTop: 32,
+    paddingHorizontal: space[4],
   },
-  statLabel: {
-    fontSize: 12,
-    color: "#666",
-    textAlign: "center",
-    fontWeight: "500",
-  },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalBackground: {
-    flex: 1,
-  },
-  bottomPanel: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 30,
-    minHeight: 200,
-  },
-  panelIndicator: {
-    width: 40,
-    height: 4,
-    backgroundColor: "#e9ecef",
-    borderRadius: 2,
-    alignSelf: "center",
-    marginBottom: 20,
-  },
-  panelHeader: {
+  settingsBody: { gap: 24 },
+  goalLabel: { fontSize: 12, color: colors.muted },
+  goalTrack: {
+    marginTop: 8,
     flexDirection: "row",
-    justifyContent: "space-between",
+    gap: 4,
+    borderRadius: radii.md,
+    backgroundColor: colors.paper,
+    padding: 4,
+  },
+  goalBtn: {
+    flex: 1,
+    height: 36,
+    borderRadius: 8,
     alignItems: "center",
-    marginBottom: 24,
+    justifyContent: "center",
   },
-  panelTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#1a1a1a",
+  goalBtnOn: {
+    backgroundColor: colors.white,
+    shadowColor: colors.ink,
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
   },
-  closeButton: {
-    padding: 8,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 20,
+  goalText: {
+    fontSize: 14,
+    color: colors.muted,
+    fontVariant: ["tabular-nums"],
   },
-  closeButtonText: {
-    fontSize: 16,
-    color: "#666",
-    fontWeight: "bold",
+  notifRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  settingOption: {
-    backgroundColor: "#f8f9fa",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+  notifTitle: { fontSize: 15 },
+  notifHint: { fontSize: 13, color: colors.muted },
+  switchTrack: {
+    width: 48,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.bar,
+    padding: 2,
+    justifyContent: "center",
+  },
+  switchTrackOn: { backgroundColor: colors.accent },
+  switchKnob: {
+    width: 24,
+    height: 24,
     borderRadius: 12,
-    marginBottom: 16,
+    backgroundColor: colors.white,
   },
-  settingOptionText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#4f24d8",
-    textAlign: "center",
-  },
-  logoutContainer: {
-    marginTop: 16,
+  switchKnobOn: { alignSelf: "flex-end" },
+  editProfileLink: {
+    paddingVertical: 8,
   },
 });
 

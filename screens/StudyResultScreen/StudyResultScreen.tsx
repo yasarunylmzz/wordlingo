@@ -1,11 +1,6 @@
 import React from "react";
-import {
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { StyleSheet, Pressable, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   RouteProp,
   useNavigation,
@@ -13,7 +8,8 @@ import {
 } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../RootStackParams";
-import { formatMinutes } from "../../domain/learning/stats";
+import AppText from "../../Components/ui/AppText";
+import { colors, radii, space } from "../../theme/theme";
 
 const StudyResultScreen = () => {
   const navigation =
@@ -25,76 +21,88 @@ const StudyResultScreen = () => {
     correct,
     wrong,
     total,
-    durationMs,
-    points = correct * 5,
-    mode,
-    exercise,
-    source = exercise === "quiz" ? "quiz" : "flip",
   } = route.params;
 
-  const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
-  const minutesLabel = formatMinutes(Math.max(1, Math.round(durationMs / 60000)));
-  const seconds = Math.round(durationMs / 1000);
-  const eyebrow =
-    source === "quiz" || exercise === "quiz" ? "Quiz oturumu" : "Flip oturumu";
+  const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const message =
+    pct === 100
+      ? "Hepsini bildin, harika."
+      : pct >= 60
+        ? "İyi gidiyorsun, yanlışları bir tur daha dene."
+        : "Yanlışları tekrar etmek akılda kalıcılığı artırır.";
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
       <View style={styles.content}>
-        <Text style={styles.eyebrow}>{eyebrow}</Text>
-        <Text style={styles.title}>{deckTitle}</Text>
-        <Text style={styles.subtitle}>
-          Session complete
-          {mode ? ` · ${mode}` : ""}
-        </Text>
+        <View style={styles.center}>
+          <AppText weight="mono" style={styles.eyebrow}>
+            Tur tamamlandı
+          </AppText>
+          <AppText weight="semibold" style={styles.pct}>
+            %{pct}
+          </AppText>
+          <AppText style={styles.message}>{message}</AppText>
 
-        <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Text style={[styles.statValue, styles.correct]}>{correct}</Text>
-            <Text style={styles.statLabel}>Doğru / Correct</Text>
+          <View style={styles.barTrack}>
+            {correct > 0 && (
+              <View style={[styles.barCorrect, { flex: correct }]} />
+            )}
+            {wrong > 0 && <View style={[styles.barWrong, { flex: wrong }]} />}
           </View>
-          <View style={styles.stat}>
-            <Text style={[styles.statValue, styles.wrong]}>{wrong}</Text>
-            <Text style={styles.statLabel}>Yanlış / Wrong</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{accuracy}%</Text>
-            <Text style={styles.statLabel}>İsabet / Accuracy</Text>
+
+          <View style={styles.stats}>
+            <View style={styles.statCard}>
+              <AppText weight="medium" style={styles.statCorrect}>
+                Bildim
+              </AppText>
+              <AppText weight="semibold" style={styles.statVal}>
+                {correct}
+              </AppText>
+            </View>
+            <View style={styles.statCard}>
+              <AppText weight="medium" style={styles.statWrong}>
+                Bilemedim
+              </AppText>
+              <AppText weight="semibold" style={styles.statVal}>
+                {wrong}
+              </AppText>
+            </View>
           </View>
         </View>
 
-        <View style={styles.metaRow}>
-          <Text style={styles.meta}>
-            {total} kart · {seconds < 60 ? `${seconds}s` : minutesLabel}
-          </Text>
-          <Text style={styles.points}>+{points} puan</Text>
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.primary,
+              pressed && { transform: [{ scale: 0.98 }] },
+            ]}
+            onPress={() =>
+              navigation.replace("StudySetup", {
+                deckId: deskId,
+                deckTitle,
+              })
+            }
+          >
+            <AppText weight="semibold" style={styles.primaryText}>
+              {wrong > 0
+                ? `Yanlışları tekrar et (${wrong})`
+                : "Tekrar çalış"}
+            </AppText>
+          </Pressable>
+          <Pressable
+            onPress={() =>
+              navigation.navigate("CardDecks", {
+                deckId: deskId,
+                deckTitle,
+              })
+            }
+            style={styles.secondary}
+          >
+            <AppText weight="semibold" style={styles.secondaryText}>
+              Desteye dön
+            </AppText>
+          </Pressable>
         </View>
-
-        <TouchableOpacity
-          style={styles.primaryButton}
-          onPress={() =>
-            navigation.replace("StudySetup", {
-              deckId: deskId,
-              deckTitle,
-            })
-          }
-        >
-          <Text style={styles.primaryButtonText}>
-            Tekrar / Retry → Setup
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() =>
-            navigation.navigate("CardDecks", {
-              deckId: deskId,
-              deckTitle,
-            })
-          }
-        >
-          <Text style={styles.secondaryButtonText}>Deck'e dön / Back</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -103,65 +111,78 @@ const StudyResultScreen = () => {
 export default StudyResultScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: colors.paper },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    alignItems: "center",
+    paddingHorizontal: space[4],
+    paddingBottom: space[9],
+  },
+  center: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 8,
   },
   eyebrow: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#4f42d8",
-    marginBottom: 8,
+    fontSize: 11,
+    letterSpacing: 1.54,
+    textTransform: "uppercase",
+    color: colors.muted,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1E293B",
-    textAlign: "center",
+  pct: {
+    marginTop: 12,
+    fontSize: 64,
+    lineHeight: 64,
+    letterSpacing: -3.2,
+    fontVariant: ["tabular-nums"],
   },
-  subtitle: { marginTop: 4, fontSize: 14, color: "#94A3B8" },
-  stats: { flexDirection: "row", gap: 16, marginTop: 40, marginBottom: 16 },
-  stat: { alignItems: "center", minWidth: 88 },
-  statValue: { fontSize: 32, fontWeight: "800", color: "#1E293B" },
-  correct: { color: "#16A34A" },
-  wrong: { color: "#DC2626" },
-  statLabel: {
-    marginTop: 6,
-    fontSize: 12,
-    color: "#64748B",
-    textAlign: "center",
+  message: {
+    marginTop: 8,
+    fontSize: 15,
+    color: colors.muted,
   },
-  metaRow: {
+  barTrack: {
+    marginTop: 32,
+    height: 8,
+    borderRadius: radii.full,
+    overflow: "hidden",
     flexDirection: "row",
+    gap: 3,
+  },
+  barCorrect: { backgroundColor: colors.correct },
+  barWrong: { backgroundColor: colors.wrong },
+  stats: {
+    marginTop: space[4],
+    flexDirection: "row",
+    gap: 10,
+  },
+  statCard: {
+    flex: 1,
+    borderRadius: radii.lg,
+    backgroundColor: colors.white,
+    padding: space[4],
+  },
+  statCorrect: { fontSize: 12, color: colors.correct },
+  statWrong: { fontSize: 12, color: colors.wrong },
+  statVal: {
+    marginTop: 4,
+    fontSize: 24,
+    letterSpacing: -0.48,
+    fontVariant: ["tabular-nums"],
+  },
+  actions: { gap: 10 },
+  primary: {
+    height: 52,
+    borderRadius: radii.lg,
+    backgroundColor: colors.accent,
     alignItems: "center",
-    gap: 12,
-    marginBottom: 40,
+    justifyContent: "center",
   },
-  meta: { fontSize: 14, color: "#94A3B8" },
-  points: { fontSize: 14, fontWeight: "700", color: "#4f42d8" },
-  primaryButton: {
-    width: "100%",
-    backgroundColor: "#4f42d8",
-    paddingVertical: 16,
-    borderRadius: 14,
+  primaryText: { fontSize: 15, color: colors.white },
+  secondary: {
+    height: 48,
+    borderRadius: radii.lg,
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
   },
-  primaryButtonText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  secondaryButton: {
-    width: "100%",
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  secondaryButtonText: {
-    color: "#334155",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  secondaryText: { fontSize: 15, color: colors.ink },
 });

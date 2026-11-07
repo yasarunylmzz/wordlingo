@@ -1,34 +1,63 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
 import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { Bell } from "lucide-react-native";
 import { RootStackParamList } from "../../RootStackParams";
 import { useAuthStore } from "../../../stores/userStore";
+import { usePrefsStore } from "../../../stores/prefsStore";
+import AppText from "../../../Components/ui/AppText";
+import { colors, greetingForHour, radii, space } from "../../../theme/theme";
 
 const HeaderComponent = () => {
   type NavigationType = NavigationProp<RootStackParamList>;
   const navigation = useNavigation<NavigationType>();
+  const notifications = usePrefsStore((s) => s.notifications);
 
-  const name = useAuthStore((state) => {
+  const firstName = useAuthStore((state) => {
     const userName = state.user.name;
     return userName
       ? userName.charAt(0).toUpperCase() + userName.slice(1).toLowerCase()
-      : "";
+      : "User";
   });
+
+  const now = new Date();
+  const date = new Intl.DateTimeFormat("tr-TR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(now);
 
   return (
     <View style={styles.userContainer}>
       <View style={styles.topTextcontainer}>
-        <Text style={styles.hiText}>Hi, {name}</Text>
-        <Text style={styles.hiText2}>Let's make this day learn</Text>
+        <AppText style={styles.date}>{date}</AppText>
+        <AppText weight="semibold" style={styles.hiText}>
+          {greetingForHour(now.getHours())},{"\n"}
+          <AppText weight="semibold" style={styles.name}>
+            {firstName}.
+          </AppText>
+        </AppText>
       </View>
       <View style={styles.rightSection}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("NotificationScreen")}
-        ></TouchableOpacity>
-
-        <TouchableOpacity
+        <Pressable
+          accessibilityLabel="Bildirimler"
+          style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+        >
+          <Bell size={18} color={colors.ink} strokeWidth={1.8} />
+          {notifications && <View style={styles.dot} />}
+        </Pressable>
+        <Pressable
+          accessibilityLabel="Profil"
           onPress={() => navigation.navigate("ProfileScreen")}
-        ></TouchableOpacity>
+          style={({ pressed }) => [
+            styles.avatar,
+            pressed && styles.pressed,
+          ]}
+        >
+          <AppText weight="semibold" style={styles.avatarText}>
+            {firstName[0]}
+          </AppText>
+        </Pressable>
       </View>
     </View>
   );
@@ -36,60 +65,73 @@ const HeaderComponent = () => {
 
 const styles = StyleSheet.create({
   userContainer: {
-    display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 16,
-
-    borderEndEndRadius: 16,
-    borderStartEndRadius: 16,
+    alignItems: "flex-start",
+    paddingHorizontal: space[5],
+    paddingTop: space[3],
   },
   topTextcontainer: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 5,
+    flex: 1,
+    paddingRight: space[3],
+  },
+  date: {
+    fontSize: 13,
+    color: colors.muted,
+    textTransform: "capitalize",
   },
   hiText: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#4f24d8",
+    marginTop: 4,
+    fontSize: 30,
+    lineHeight: 31.5,
+    letterSpacing: -1.05,
+    color: colors.ink,
   },
-  hiText2: {
-    fontSize: 14,
-    color: "#575757",
-  },
-  users: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: "#fff",
+  name: {
+    fontSize: 30,
+    lineHeight: 31.5,
+    letterSpacing: -1.05,
+    color: colors.accent,
   },
   rightSection: {
-    display: "flex",
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
     alignItems: "center",
+    paddingTop: 4,
   },
-  iconStyles: {
-    display: "flex",
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.white,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: "#fff",
   },
-  dotIcon: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: "#ff763f",
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    fontSize: 14,
+    color: colors.accent,
+  },
+  dot: {
     position: "absolute",
-    top: 0,
-    right: 0,
+    right: 10,
+    top: 10,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.accent,
+  },
+  pressed: {
+    transform: [{ scale: 0.95 }],
   },
 });
 
