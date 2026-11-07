@@ -26,6 +26,7 @@ import { mergeCardWithLearning } from "../../domain/learning/merge";
 import { selectSessionCards } from "../../domain/learning/session";
 import AppText from "../../Components/ui/AppText";
 import Switch from "../../Components/ui/Switch";
+import { QUIZ_MIN_CARDS } from "../../domain/learning/quiz";
 import { colors, radii, space } from "../../theme/theme";
 
 const EXERCISES: {
@@ -167,7 +168,11 @@ const StudySetupScreen = () => {
                   <AppText weight="semibold" style={styles.exerciseTitle}>
                     {title}
                   </AppText>
-                  <AppText style={styles.exerciseHint}>{hint}</AppText>
+                  <AppText style={styles.exerciseHint}>
+                    {id === "quiz" && rawCards.length < QUIZ_MIN_CARDS
+                      ? `En az ${QUIZ_MIN_CARDS} kart gerekir`
+                      : hint}
+                  </AppText>
                   {active && (
                     <View style={styles.check}>
                       <Check size={12} color={colors.white} strokeWidth={3} />

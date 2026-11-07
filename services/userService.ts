@@ -34,11 +34,23 @@ export async function createUser(
     password: password,
   };
   try {
-    const response = axios.post(`${API_BASE_URL}/createuser`, data);
+    const response = await axios.post(`${API_BASE_URL}/createuser`, data);
     return response;
   } catch (error) {
     console.error("Error:", error);
+    throw error;
   }
+}
+
+/**
+ * Request a password-reset email.
+ * API gap: backend has no `/forgot-password` (or equivalent) yet.
+ * Call sites should surface an honest UI until this is implemented.
+ */
+export async function forgotPassword(_email: string): Promise<never> {
+  throw new Error(
+    "forgotPassword API is not available yet (no /forgot-password endpoint).",
+  );
 }
 
 export async function verification(id: string, email: string, code: string) {
