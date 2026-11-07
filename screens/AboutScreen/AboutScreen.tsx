@@ -41,9 +41,10 @@ const AboutApp = () => {
             <Text style={styles.sectionTitle}>About</Text>
             <Text style={styles.description}>
               Word Lingo helps you build vocabulary with custom decks, flip
-              practice, and multiple-choice quizzes. Progress uses a simple
-              level ladder (0–3) plus wrong / forgotten / hard review queues —
-              not a classical Anki SM-2 spaced-repetition schedule.
+              practice, and multiple-choice quizzes. Progress uses a 0–3 level
+              ladder with fixed gaps (same day, 1 day, 4 days, 14 days). Bugün
+              is the due queue. Wrong and hard stay optional filters. This is
+              not Anki SM-2 or FSRS.
             </Text>
           </View>
 
@@ -63,7 +64,7 @@ const AboutApp = () => {
             <View style={styles.featureItem}>
               <Ionicons name="repeat" size={20} color="#2F80ED" />
               <Text style={styles.featureText}>
-                Level ladder + wrong / forgotten / hard queues
+                Bugün due queue + wrong / hard filters
               </Text>
             </View>
             <View style={styles.featureItem}>

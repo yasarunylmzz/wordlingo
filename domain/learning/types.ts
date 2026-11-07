@@ -1,14 +1,18 @@
-/** Learning ladder 0–3 (Vocab Builder model — not Anki SM-2). */
+/** Learning ladder 0–3 with fixed due gaps. Not Anki SM-2 and not FSRS. */
 export type LearningLevel = 0 | 1 | 2 | 3;
 
-export type StudyMode = "normal" | "wrong" | "forgotten" | "hard" | "review";
+/** `today` is the due queue. Wrong and hard stay optional filters. */
+export type StudyMode = "today" | "normal" | "wrong" | "hard" | "review";
 
 /** Phase 1 exercises; more modes land in later phases. */
 export type StudyExercise = "study" | "quiz" | "flip";
 
 export type QuizDirection = "w1-w2" | "w2-w1";
 
-/** Persisted progress for one card (separate from API Card content). */
+/**
+ * Persisted progress for one card (separate from API Card content).
+ * One schedule per card — quiz direction does not get its own due date.
+ */
 export interface CardLearningState {
   cardId: string;
   deskId: string;
@@ -17,6 +21,13 @@ export interface CardLearningState {
   wrongCount: number;
   isHard: boolean;
   lastStudiedAt: number;
+  /** Epoch ms. Daily queue is `dueAt <= now`. */
+  dueAt: number;
+  /**
+   * Days until the next due date. Level 3 doubling is remembered here.
+   * This is not an SM-2 ease factor.
+   */
+  intervalDays: number;
 }
 
 /**
@@ -33,6 +44,8 @@ export interface StudyCard {
   wrongCount: number;
   isHard: boolean;
   lastStudiedAt: number;
+  dueAt: number;
+  intervalDays: number;
 }
 
 export interface StudySessionConfig {

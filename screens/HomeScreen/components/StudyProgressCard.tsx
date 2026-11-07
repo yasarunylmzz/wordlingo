@@ -28,21 +28,23 @@ const StudyProgressCard = () => {
 
   const queues = useMemo(() => {
     const all = Object.values(cards).flat();
+    const now = Date.now();
     let ladder = 0;
     let wrong = 0;
-    let forgotten = 0;
+    let today = 0;
     for (const card of all) {
       const s = byCardId[card.id];
       const level = s?.learningLevel ?? 0;
       const wrongCount = s?.wrongCount ?? 0;
       if (level < 3) ladder += 1;
       if (wrongCount > 0 && level < 3) wrong += 1;
-      if (level === 3 && wrongCount > 0) forgotten += 1;
+      // Missing dueAt is due now, same as the learning-store migration.
+      if (typeof s?.dueAt !== "number" || s.dueAt <= now) today += 1;
     }
     return [
-      { label: "Seviye merdiveni", count: ladder },
+      { label: "Bugün", count: today },
       { label: "Yanlışlar", count: wrong },
-      { label: "Unutulanlar", count: forgotten },
+      { label: "Seviye merdiveni", count: ladder },
     ];
   }, [cards, byCardId]);
 
